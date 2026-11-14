@@ -207,7 +207,7 @@ func apply(id: StringName, entity: int, source: int = 0) -> DotResult:
 				applied.emit(entity, id, source, existing.stacks)
 				return DotResult.success(existing)
 
-	if state.count() >= rules.max_per_entity:
+	if rules.max_per_entity > 0 and state.count() >= rules.max_per_entity:
 		return DotResult.fail(
 			DotError.CODE_QUOTA,
 			(

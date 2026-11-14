@@ -13,7 +13,7 @@ extends "selftest/effects_checks_late.gd"
 ## [/codeblock]
 
 const SECTIONS := 14
-const CHECKS := 148
+const CHECKS := 150
 
 
 func _ready() -> void:
@@ -463,6 +463,12 @@ func _test_limits() -> void:
 		"with a quota code, because an effect applied by a weapon is one applied as "
 		+ "fast as that weapon fires"
 	)
+
+	m.rules.max_per_entity = 0
+	_check(m.apply(&"e3", 1).ok, "0 is unlimited: the fourth applies")
+	m.rules.max_per_entity = -1
+	_check(not m.rules.validate().ok, "a negative limit is refused by validate")
+	m.rules.max_per_entity = 3
 
 	var keep := DotEffectDef.make(&"keeper", 100 * RATE)
 	keep.clear_on_death = false

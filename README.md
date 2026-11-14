@@ -95,7 +95,7 @@ All numbers are defaults and all are configurable. Ticks assume 64 a second.
 
 | Setting | Default | What it does |
 | --- | --- | --- |
-| `max_per_entity` | 24 | Most effects one entity can hold at once. A further one is refused. This is a real limit, not unlimited at 0, and the inspector slider runs 1 to 256. |
+| `max_per_entity` | 24 | Most effects one entity can hold at once. A further one is refused. Default 24, 0 = unlimited; negative is refused by `validate()`. |
 | `allow_stacking` | true | Off makes every `STACK` effect refresh instead. |
 | `downed_enabled` | false | Go down at zero health instead of dying. |
 | `downed_health` | 300 | The pool a downed player bleeds through. |

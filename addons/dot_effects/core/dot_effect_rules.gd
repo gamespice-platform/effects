@@ -15,7 +15,9 @@ extends DotConfig
 ## Not a performance number — it is a griefing one. An effect applied by a weapon is an
 ## effect applied as fast as that weapon fires, and an unbounded list is a server that
 ## spends its tick iterating one player's status.
-@export_range(1, 256, 1) var max_per_entity: int = 24
+##
+## Default 24, 0 = unlimited. Negative is refused by [method validate].
+@export_range(0, 256, 1, "or_greater") var max_per_entity: int = 24
 
 ## Turn the whole stacking half off. Everything becomes REFRESH.
 @export var allow_stacking: bool = true
@@ -81,6 +83,11 @@ func cli_prefix() -> String:
 
 
 func validate() -> DotResult:
+	if max_per_entity < 0:
+		return DotResult.fail(
+			DotError.CODE_INVALID,
+			"max_per_entity %d is negative; 0 means unlimited." % max_per_entity
+		)
 	if downed_enabled and downed_bleed_per_tick <= 0.0 and downed_health > 0.0:
 		return DotResult.fail(
 			DotError.CODE_INVALID,
