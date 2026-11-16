@@ -86,7 +86,7 @@ effects.rules = rules
 ```
 
 ```bash
-DOT_EFFECTS_DOWNED_ENABLED=true godot --headless -- --effects-downed-max-incaps=3
+GS_EFFECTS_DOWNED_ENABLED=true godot --headless -- --effects-downed-max-incaps=3
 ```
 
 All numbers are defaults and all are configurable. Ticks assume 64 a second.
