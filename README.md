@@ -1,4 +1,4 @@
-[![dot-effects - GameSpice addon](docs/banner.png)](https://moddingcommunity.com/a/238-dot-effects)
+[![Effects - GameSpice addon](docs/banner.png)](https://moddingcommunity.com/a/238-dot-effects)
 
 Status effects, temporary health and going down instead of dying, for Godot 4.7+. Burning, crits, invulnerability, slows, stuns and marks are one data document with different numbers, so a new effect is data and not a new class. Part of the [dot-*](https://github.com/gamespice-platform) family. It needs only [dot-core](https://github.com/gamespice-platform/core).
 
