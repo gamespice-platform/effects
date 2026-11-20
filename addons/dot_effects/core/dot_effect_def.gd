@@ -21,7 +21,7 @@ extends Resource
 ##
 ## [b]It never touches a health value.[/b] A periodic effect emits an amount and the
 ## game applies it to whatever it keeps health in — [DotHealth] in every game here.
-## dot-effects does not import dot-combat, because a slow, a stun and a speed boost are
+## GameSpice Effects does not import GameSpice Combat, because a slow, a stun and a speed boost are
 ## the same rule in a game with no damage in it at all.
 
 ## What a second application of the same effect does.
@@ -81,7 +81,7 @@ enum Stacking {
 ## Damage per application. Reported, never applied — see the class note.
 @export_range(0.0, 10000.0, 0.1, "or_greater") var damage_per_tick: float = 0.0
 
-## Which [DotDamageType] id the periodic damage is. A string, because dot-combat is not
+## Which [DotDamageType] id the periodic damage is. A string, because GameSpice Combat is not
 ## a dependency and an id is what both ends already agree on.
 @export var damage_type: StringName = &""
 

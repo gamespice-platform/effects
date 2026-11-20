@@ -1,7 +1,7 @@
 @tool
 extends EditorPlugin
 
-## Editor entry point for dot-effects. Registers inspector types only.
+## Editor entry point for GameSpice Effects. Registers inspector types only.
 ##
 ## No autoloads: a server that simulates and a client that mirrors are two managers in
 ## one process, which is the arrangement every suite in this family runs.

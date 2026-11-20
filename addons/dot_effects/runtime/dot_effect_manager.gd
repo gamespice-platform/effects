@@ -20,8 +20,8 @@ extends Node
 ##
 ## [b]It never touches a health value.[/b] A burning entity does not lose health here;
 ## [signal damaged] is emitted with an amount and the game applies it to whatever it
-## keeps health in — [DotHealth] in every game in this family. dot-effects does not
-## import dot-combat, because a slow, a stun and a speed boost are the same rule in a
+## keeps health in — [DotHealth] in every game in this family. GameSpice Effects does not
+## import GameSpice Combat, because a slow, a stun and a speed boost are the same rule in a
 ## game with no damage in it at all, and a hard dependency would make that game one
 ## that cannot compile.
 ##
@@ -557,7 +557,7 @@ func _within_revive_range(by: int, entity: int) -> DotResult:
 ## Give an entity health above its maximum. Overheal, pills, adrenaline.
 ##
 ## Tracked here rather than in [DotHealth] because it is a *decaying* number with a
-## grace period and a source, and because a game with no dot-combat in it still has
+## grace period and a source, and because a game with no GameSpice Combat in it still has
 ## pills. The game keeps the real value; this says how much of it is temporary and
 ## emits [signal temp_decayed] as it goes.
 func grant_temp(entity: int, amount: float) -> float:

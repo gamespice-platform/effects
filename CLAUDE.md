@@ -1,10 +1,10 @@
-# dot-effects
+# GameSpice Effects
 
 Status effects, incapacitation and temporary health. Burning, crits, invulnerability, slows, stuns and marks as one document rather than one class each; and the co-operative shooters' down-rather-than-dead, with the revive that is a decision. It never touches a health value: it emits `damaged` and the game applies it.
 
 Read the family [CLAUDE.md](../../CLAUDE.md) first.
 
-**The distributable is `addons/dot_effects/`.** It requires [dot-core](../dot-core) and nothing else (`ln -s ../../dot-core/addons/dot_core addons/dot_core`, gitignored). It does not import dot-combat.
+**The distributable is `addons/dot_effects/`.** It requires [GameSpice Core](../dot-core) and nothing else (`ln -s ../../dot-core/addons/dot_core addons/dot_core`, gitignored). It does not import dot-combat.
 
 ## Read before
 
@@ -36,7 +36,7 @@ The family's two steps ([family CLAUDE.md](../../CLAUDE.md#validating-anything))
 
 ## Rules that bite
 
-- Never touch a health value or name a dot-combat class; damage leaves as `damaged(entity, amount, type: StringName, source)`. [design](docs/design.md#it-never-touches-a-health-value)
+- Never touch a health value or name a GameSpice Combat class; damage leaves as `damaged(entity, amount, type: StringName, source)`. [design](docs/design.md#it-never-touches-a-health-value)
 - A new effect is a `DotEffectDef`, never a class. [design](docs/design.md#why-this-exists)
 - The aggregate is recomputed on apply, remove and expiry; never cache it against a deadline. [design](docs/design.md#the-aggregate-is-recomputed-on-change-never-cached-against-a-deadline)
 - Scales multiply, stacks included; never add them. [design](docs/design.md#modifiers-multiply-and-stacks-multiply-too)

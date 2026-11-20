@@ -57,7 +57,7 @@ static func acid() -> DotHazardProfile:
 	return DotHazardProfile.new()
 
 
-## Reads every key present in [param values] (a dot-profile's values, a cvar dump), clamped; unknown keys are ignored.
+## Reads every key present in [param values] (a GameSpice Profile's values, a cvar dump), clamped; unknown keys are ignored.
 static func from_values(values: Dictionary, base: DotHazardProfile = null) -> DotHazardProfile:
 	var p := base if base != null else DotHazardProfile.new()
 	for key: String in KEYS:

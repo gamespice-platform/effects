@@ -1,4 +1,4 @@
-# dot-effects history
+# GameSpice Effects history
 
 Bugs found by running it, kept because each could come back. The live rule from each is in [design.md](design.md).
 

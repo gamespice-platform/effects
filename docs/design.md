@@ -1,10 +1,10 @@
-# dot-effects design
+# GameSpice Effects design
 
 Why the addon is shaped the way it is, and why the obvious alternative is wrong at each point. The rules are one line each in [CLAUDE.md](../CLAUDE.md).
 
 ## Why this exists
 
-[dot-combat](../../dot-combat) resolves one hit: a trace, a hitbox, a multiplier, a number subtracted from a `DotHealth`. Everything that happens over time to the entity on either end of that hit had nowhere to live, so every game reinvented it, and there is a lot of it. A class-based team shooter alone has burning, bleeding, blinding, dousing, crit-boost, mini-crit, invulnerability, overheal, marked-for-death and stun; a co-operative survival shooter has a stimulant, a heal-over-time, an incendiary, a lure and being incapacitated.
+[GameSpice Combat](../../dot-combat) resolves one hit: a trace, a hitbox, a multiplier, a number subtracted from a `DotHealth`. Everything that happens over time to the entity on either end of that hit had nowhere to live, so every game reinvented it, and there is a lot of it. A class-based team shooter alone has burning, bleeding, blinding, dousing, crit-boost, mini-crit, invulnerability, overheal, marked-for-death and stun; a co-operative survival shooter has a stimulant, a heal-over-time, an incendiary, a lure and being incapacitated.
 
 Nearly all of those are the same few fields with different numbers: a duration, a periodic amount, multipliers on damage taken, damage dealt, movement, jump and fire rate, and some flags. Writing them as classes is writing the same file twenty times and then having them disagree, which is this family's most repeated bug in its most expensive form. So an effect is one `DotEffectDef` resource, and `DotEffectDef.make`, `burning`, `damage_buff`, `invulnerability` and `speed` are the stock constructors.
 
@@ -12,7 +12,7 @@ Nearly all of those are the same few fields with different numbers: a duration, 
 
 A burning entity does not lose health here. `DotEffectManager.damaged` is emitted with an amount, a type id and a source, and the game applies it to whatever it keeps health in. That is what makes the addon usable:
 
-- dot-effects does not import dot-combat, so a slow, a stun and a speed boost work in a game with no damage system at all (one where being eaten is a mass ratio, say).
+- GameSpice Effects does not import GameSpice Combat, so a slow, a stun and a speed boost work in a game with no damage system at all (one where being eaten is a mass ratio, say).
 - The damage type is a `StringName` rather than a `DotDamageType`, because an id is what both ends already agree on and a class reference is a hard dependency.
 - A game that wants lag compensation, armour, friendly-fire rules or damage falloff applied to an afterburn tick gets all of them for free, because the tick goes through the same `DotDamageResolver` as everything else.
 
@@ -20,7 +20,7 @@ The same seam in the other direction: this addon does not know when an entity di
 
 ## The aggregate is recomputed on change, never cached against a deadline
 
-`DotEffectState.recompute()` runs when an effect is applied, removed or expires: not per tick and never per query. The obvious optimisation is a cache with a validity window, and this family already paid for that one: dot-net's `DotNetInterest.relevant_for` cached per peer, an entity spawned since was in nobody's cached set, and on a host ticking faster than the wall clock the cache never expired and the entity was never sent once. A cached answer that misses what changed looks exactly like a wrong answer, and you look for it in the producer.
+`DotEffectState.recompute()` runs when an effect is applied, removed or expires: not per tick and never per query. The obvious optimisation is a cache with a validity window, and this family already paid for that one: GameSpice Net's `DotNetInterest.relevant_for` cached per peer, an entity spawned since was in nobody's cached set, and on a host ticking faster than the wall clock the cache never expired and the entity was never sent once. A cached answer that misses what changed looks exactly like a wrong answer, and you look for it in the producer.
 
 ## Modifiers multiply, and stacks multiply too
 
@@ -30,7 +30,7 @@ Two 0.5 slows are 0.25, not 0. An additive scheme reaches zero at two entries an
 
 "Immune" and "takes zero damage" differ where it matters: a game draws one and not the other, an objective refuses a capture from one (`no_capture`), and a resolver that multiplies by zero still records a hit and still fires a hit sound.
 
-`no_capture` is separate from `no_attack` for the reason dot-objective's presence asks `may_capture` and `may_block` separately: the team shooters' invulnerable player may not capture, may not be hurt, and may absolutely still shoot.
+`no_capture` is separate from `no_attack` for the reason GameSpice Objective's presence asks `may_capture` and `may_block` separately: the team shooters' invulnerable player may not capture, may not be hurt, and may absolutely still shoot.
 
 ## Interaction is by tag, never by id
 
@@ -42,7 +42,7 @@ Curing happens before the per-entity cap (`DotEffectRules.max_per_entity`) is ch
 
 A cancelled revive throws its progress away. Keeping it makes a revive something two players can chip at from cover, which removes the entire reason it is a decision.
 
-A revive re-tests its own preconditions every tick: the reviver alive, in range, and not down themselves. A game that only calls `cancel_revive()` from its death handler has one path to get wrong; this has none. Same shape as dot-objective's defuse.
+A revive re-tests its own preconditions every tick: the reviver alive, in range, and not down themselves. A game that only calls `cancel_revive()` from its death handler has one path to get wrong; this has none. Same shape as GameSpice Objective's defuse.
 
 Downed state is created on demand by every accessor, `on_death()` included; reading `_downed` directly loses the "dead" record of anyone who was never down ([history](history.md#on_death-skipped-anyone-never-down)).
 
@@ -58,8 +58,8 @@ A game holds a `DotEffectManager`, never a `DotEffectState`. Every aggregate the
 
 ## Deliberately not here
 
-- **No particles, no sounds, no icons.** dot-ui's rule for dot-ui's reason. `label` and `tags` are what a HUD draws from.
+- **No particles, no sounds, no icons.** GameSpice UI's rule for GameSpice UI's reason. `label` and `tags` are what a HUD draws from.
 - **No health.** The whole design, above.
-- **No classes.** A class in a class-based shooter is a loadout, a set of tunables and a health value: dot-loadout, `DotFpsTunables` and dot-combat respectively. A "class" resource here would be a fourth place to write the same three things.
-- **No cooldowns or charges.** When a player may use something is a weapon's business, and dot-weapon's arsenal has it.
-- **No prediction.** Effects are server-authoritative and unpredicted, for dot-props' reason: a client that predicts its own crit and is wrong has shown the player a number that did not happen.
+- **No classes.** A class in a class-based shooter is a loadout, a set of tunables and a health value: GameSpice Loadout, `DotFpsTunables` and GameSpice Combat respectively. A "class" resource here would be a fourth place to write the same three things.
+- **No cooldowns or charges.** When a player may use something is a weapon's business, and GameSpice Weapon's arsenal has it.
+- **No prediction.** Effects are server-authoritative and unpredicted, for GameSpice Props' reason: a client that predicts its own crit and is wrong has shown the player a number that did not happen.
