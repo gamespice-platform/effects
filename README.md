@@ -1,3 +1,5 @@
+[![dot-effects - GameSpice addon](docs/banner.png)](https://moddingcommunity.com/a/238-dot-effects)
+
 Status effects, temporary health and going down instead of dying, for Godot 4.7+. Burning, crits, invulnerability, slows, stuns and marks are one data document with different numbers, so a new effect is data and not a new class. Part of the [dot-*](https://github.com/gamespice-platform) family. It needs only [dot-core](https://github.com/gamespice-platform/core).
 
 The addon never changes a health value. A burning entity makes the manager emit `damaged` with an amount, and your game applies it the way it applies any damage, so a burn tick goes through the same armour and friendly-fire rules as a bullet. A slowed entity makes `move_speed_scale()` return less than 1, and your movement code reads it. Effects therefore work in a game with no damage system at all.
