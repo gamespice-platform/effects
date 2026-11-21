@@ -8,8 +8,8 @@ It has two related systems: temporary health that decays (overheal, pills), and 
 
 ## Install
 
-1. Copy `addons/dot_effects/` and `addons/dot_core/` into your project.
-2. Enable dot-effects in *Project > Project Settings > Plugins*.
+1. Copy `addons/gs_effects/` and `addons/gs_core/` into your project.
+2. Enable gs-effects in *Project > Project Settings > Plugins*.
 
 [GameSpice Bootstrap](https://github.com/gamespice-platform/bootstrap) clones every project and links the addons for you.
 

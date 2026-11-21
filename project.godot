@@ -10,7 +10,7 @@ config_version=5
 
 [application]
 
-config/name="dot-effects"
+config/name="gs-effects"
 config/description="Status effects, incapacitation and temporary health: burning, crits, invulnerability, slows and stuns as one document rather than one class each, and the co-operative shooters' down-rather-than-dead with the revive that is a decision."
 run/main_scene="res://examples/effects_selftest.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
@@ -23,7 +23,7 @@ window/size/viewport_height=900
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/dot_effects/plugin.cfg")
+enabled=PackedStringArray("res://addons/gs_effects/plugin.cfg")
 
 [importer_defaults]
 

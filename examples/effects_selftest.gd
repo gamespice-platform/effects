@@ -1,6 +1,6 @@
 extends "selftest/effects_checks_late.gd"
 
-## Exercises dot-effects with no other addon, no health system and no transport.
+## Exercises gs-effects with no other addon, no health system and no transport.
 ##
 ## The manager is driven by a tick counter and a dictionary of positions, which is the
 ## seam a real game fills — so what is checked here is what this addon promises: that a
@@ -22,7 +22,7 @@ func _ready() -> void:
 
 
 func _run() -> void:
-	_line("dot-effects self-test")
+	_line("gs-effects self-test")
 	_line("")
 
 	_test_definitions()
@@ -291,13 +291,13 @@ func _test_periodic() -> void:
 
 	_check(hits.size() >= 6, "a four-second burn at half a second reports about eight times (%d)" % hits.size())
 	_check(is_equal_approx(hits[0], 3.0), "each for the definition's amount")
-	_check(types[0] == &"fire", "with the damage type id, which is a string because dot-combat is not a dependency")
+	_check(types[0] == &"fire", "with the damage type id, which is a string because gs-combat is not a dependency")
 
 	# The seam that matters: nothing here changed a health value, because there is no
 	# health value in this addon at all.
 	_check(
 		m.state_of(1).count() == 0 or true,
-		"and nothing in dot-effects owns a health value to have changed"
+		"and nothing in gs-effects owns a health value to have changed"
 	)
 
 	var heal := GSEffectDef.make(&"medic", 4 * RATE)

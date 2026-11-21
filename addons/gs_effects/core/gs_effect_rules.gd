@@ -75,7 +75,7 @@ extends GSConfig
 
 
 func env_prefix() -> String:
-	return "DOT_EFFECTS_"
+	return "GS_EFFECTS_"
 
 
 func cli_prefix() -> String:

@@ -6,13 +6,13 @@ extends EditorPlugin
 ## No autoloads: a server that simulates and a client that mirrors are two managers in
 ## one process, which is the arrangement every suite in this family runs.
 
-const _ICON := "res://addons/dot_effects/icon_placeholder.svg"
+const _ICON := "res://addons/gs_effects/icon_placeholder.svg"
 
 const _TYPES := [
 	[
 		"GSEffectManager",
 		"Node",
-		"res://addons/dot_effects/runtime/dot_effect_manager.gd",
+		"res://addons/gs_effects/runtime/gs_effect_manager.gd",
 	],
 ]
 

@@ -4,7 +4,7 @@ Status effects, incapacitation and temporary health. Burning, crits, invulnerabi
 
 Read the family [CLAUDE.md](../../CLAUDE.md) first.
 
-**The distributable is `addons/dot_effects/`.** It requires [GameSpice Core](../dot-core) and nothing else (`ln -s ../../dot-core/addons/dot_core addons/dot_core`, gitignored). It does not import dot-combat.
+**The distributable is `addons/gs_effects/`.** It requires [GameSpice Core](../gs-core) and nothing else (`ln -s ../../gs-core/addons/gs_core addons/gs_core`, gitignored). It does not import gs-combat.
 
 ## Read before
 
@@ -17,18 +17,18 @@ Read the family [CLAUDE.md](../../CLAUDE.md) first.
 
 | Path | What |
 | --- | --- |
-| `core/dot_effect_def.gd` | `GSEffectDef`: the document (duration, periodic amount, scales, flags, `tags`, `cures`, `immune_to`) and stock constructors (`screen_impair`: a stacking status a screen overlay reads) |
-| `core/dot_effect_instance.gd` | `GSEffectInstance`: one application to one entity |
-| `core/dot_effect_state.gd` | `GSEffectState`: everything on one entity and its aggregate (`recompute`) |
-| `core/dot_effect_rules.gd` | `GSEffectRules`: limits, temporary health, the downed/revive half; layered `GSConfig` |
-| `core/dot_downed.gd` | `GSDowned`: one entity, down rather than dead |
-| `core/dot_stack_scale.gd` | `GSStackScale`: `ramp` (base plus a step per stack, capped) and `fade_alpha` (solid down to a visible floor); pure arithmetic a game feeds its own cvars |
-| `core/dot_hazard_profile.gd` | `GSHazardProfile`: one ground hazard as a document (radius, lifetime, dps and ramp, tick interval, slow, fade, colour, per-owner and global caps, trail spacing); `KEYS` lists the clampable values a game publishes as cvars or dot-profile keys, `from_values` reads them |
-| `runtime/dot_hazard_pool.gd` | `GSHazardPool`: puddles of acid, goo or oil. Damage leaves through `damage_sink`, who is inside comes from `occupants`; caps evict the oldest; `trail()` drops puddles behind a moving owner; clients draw from `added`/`ended`. Zombie Zone's acid runs on it |
-| `runtime/dot_effect_manager.gd` | `GSEffectManager`: the one node a game holds; queries, `damaged`, `on_death`, `report_zero_health`, wire form |
+| `core/gs_effect_def.gd` | `GSEffectDef`: the document (duration, periodic amount, scales, flags, `tags`, `cures`, `immune_to`) and stock constructors (`screen_impair`: a stacking status a screen overlay reads) |
+| `core/gs_effect_instance.gd` | `GSEffectInstance`: one application to one entity |
+| `core/gs_effect_state.gd` | `GSEffectState`: everything on one entity and its aggregate (`recompute`) |
+| `core/gs_effect_rules.gd` | `GSEffectRules`: limits, temporary health, the downed/revive half; layered `GSConfig` |
+| `core/gs_downed.gd` | `GSDowned`: one entity, down rather than dead |
+| `core/gs_stack_scale.gd` | `GSStackScale`: `ramp` (base plus a step per stack, capped) and `fade_alpha` (solid down to a visible floor); pure arithmetic a game feeds its own cvars |
+| `core/gs_hazard_profile.gd` | `GSHazardProfile`: one ground hazard as a document (radius, lifetime, dps and ramp, tick interval, slow, fade, colour, per-owner and global caps, trail spacing); `KEYS` lists the clampable values a game publishes as cvars or gs-profile keys, `from_values` reads them |
+| `runtime/gs_hazard_pool.gd` | `GSHazardPool`: puddles of acid, goo or oil. Damage leaves through `damage_sink`, who is inside comes from `occupants`; caps evict the oldest; `trail()` drops puddles behind a moving owner; clients draw from `added`/`ended`. Zombie Zone's acid runs on it |
+| `runtime/gs_effect_manager.gd` | `GSEffectManager`: the one node a game holds; queries, `damaged`, `on_death`, `report_zero_health`, wire form |
 | `examples/effects_selftest.tscn` | the suite |
 
-Paths except `examples/` are in `addons/dot_effects/`.
+Paths except `examples/` are in `addons/gs_effects/`.
 
 ## Running and testing
 

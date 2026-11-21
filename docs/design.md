@@ -4,7 +4,7 @@ Why the addon is shaped the way it is, and why the obvious alternative is wrong 
 
 ## Why this exists
 
-[GameSpice Combat](../../dot-combat) resolves one hit: a trace, a hitbox, a multiplier, a number subtracted from a `GSHealth`. Everything that happens over time to the entity on either end of that hit had nowhere to live, so every game reinvented it, and there is a lot of it. A class-based team shooter alone has burning, bleeding, blinding, dousing, crit-boost, mini-crit, invulnerability, overheal, marked-for-death and stun; a co-operative survival shooter has a stimulant, a heal-over-time, an incendiary, a lure and being incapacitated.
+[GameSpice Combat](../../gs-combat) resolves one hit: a trace, a hitbox, a multiplier, a number subtracted from a `GSHealth`. Everything that happens over time to the entity on either end of that hit had nowhere to live, so every game reinvented it, and there is a lot of it. A class-based team shooter alone has burning, bleeding, blinding, dousing, crit-boost, mini-crit, invulnerability, overheal, marked-for-death and stun; a co-operative survival shooter has a stimulant, a heal-over-time, an incendiary, a lure and being incapacitated.
 
 Nearly all of those are the same few fields with different numbers: a duration, a periodic amount, multipliers on damage taken, damage dealt, movement, jump and fire rate, and some flags. Writing them as classes is writing the same file twenty times and then having them disagree, which is this family's most repeated bug in its most expensive form. So an effect is one `GSEffectDef` resource, and `GSEffectDef.make`, `burning`, `damage_buff`, `invulnerability` and `speed` are the stock constructors.
 
