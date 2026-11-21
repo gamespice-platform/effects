@@ -1,11 +1,11 @@
-class_name DotEffectState
+class_name GSEffectState
 extends RefCounted
 
 ## Everything affecting one entity, and what it adds up to.
 ##
 ## [b]The aggregate is recomputed on every change rather than cached against a
 ## deadline.[/b] That is a deliberate choice against the obvious optimisation, and the
-## reason is in this family's own notes: [code]DotNetInterest.relevant_for[/code] cached
+## reason is in this family's own notes: [code]GSNetInterest.relevant_for[/code] cached
 ## per peer, an entity spawned since was in nobody's cached set, and on a host ticking
 ## faster than the wall clock the cache never expired and the entity was never sent
 ## once. A cached answer that misses what changed since looks exactly like a wrong
@@ -16,7 +16,7 @@ extends RefCounted
 
 var entity: int = 0
 
-var instances: Array[DotEffectInstance] = []
+var instances: Array[GSEffectInstance] = []
 
 # The aggregate. Read through the accessors; they are what a game asks.
 var _damage_taken: float = 1.0
@@ -52,7 +52,7 @@ func has(id: StringName) -> bool:
 	return false
 
 
-func find(id: StringName, source: int = -1) -> DotEffectInstance:
+func find(id: StringName, source: int = -1) -> GSEffectInstance:
 	for inst in instances:
 		if inst.id() != id:
 			continue
@@ -79,7 +79,7 @@ func has_tag(tag: String) -> bool:
 
 
 ## Whether a new effect with these tags would be refused.
-func is_immune_to(def: DotEffectDef) -> bool:
+func is_immune_to(def: GSEffectDef) -> bool:
 	if def == null:
 		return false
 	for tag in def.tags:

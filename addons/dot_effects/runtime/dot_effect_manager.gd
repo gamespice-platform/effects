@@ -1,16 +1,16 @@
-class_name DotEffectManager
+class_name GSEffectManager
 extends Node
 
 ## Status effects, incapacitation and temporary health, for every entity in a game.
 ##
 ## [codeblock]
-## var effects := DotEffectManager.new()
+## var effects := GSEffectManager.new()
 ## effects.rules.downed_enabled = true
-## effects.define(DotEffectDef.burning(&"afterburn", 3.0, 10 * 64))
+## effects.define(GSEffectDef.burning(&"afterburn", 3.0, 10 * 64))
 ## add_child(effects)
 ##
 ## effects.damaged.connect(func(entity, amount, type, source):
-##     var d := DotDamage.make(source, entity, amount, combat.damage_type(type))
+##     var d := GSDamage.make(source, entity, amount, combat.damage_type(type))
 ##     d.tick = tick
 ##     health_of(entity).apply(d))
 ##
@@ -20,7 +20,7 @@ extends Node
 ##
 ## [b]It never touches a health value.[/b] A burning entity does not lose health here;
 ## [signal damaged] is emitted with an amount and the game applies it to whatever it
-## keeps health in — [DotHealth] in every game in this family. GameSpice Effects does not
+## keeps health in — [GSHealth] in every game in this family. GameSpice Effects does not
 ## import GameSpice Combat, because a slow, a stun and a speed boost are the same rule in a
 ## game with no damage in it at all, and a hard dependency would make that game one
 ## that cannot compile.
@@ -63,11 +63,11 @@ signal died(entity: int, reason: StringName)
 ## Temporary health above the maximum decayed. The game subtracts it.
 signal temp_decayed(entity: int, amount: float)
 
-@export var rules: DotEffectRules = null
+@export var rules: GSEffectRules = null
 
 ## Effects this game has. Assigning this and calling [method setup] is the whole of
 ## loading an effect table.
-@export var definitions: Array[DotEffectDef] = []
+@export var definitions: Array[GSEffectDef] = []
 
 ## Off on a client, which mirrors rather than simulating.
 @export var authoritative: bool = true
@@ -90,14 +90,14 @@ var _tick: int = 0
 
 func _init() -> void:
 	if rules == null:
-		rules = DotEffectRules.new()
+		rules = GSEffectRules.new()
 
 
-func setup(p_defs: Array[DotEffectDef] = []) -> DotResult:
+func setup(p_defs: Array[GSEffectDef] = []) -> GSResult:
 	if not p_defs.is_empty():
 		definitions = p_defs
 	if rules == null:
-		rules = DotEffectRules.new()
+		rules = GSEffectRules.new()
 
 	var res := rules.validate()
 	if not res.ok:
@@ -109,20 +109,20 @@ func setup(p_defs: Array[DotEffectDef] = []) -> DotResult:
 		if not one.ok:
 			return one
 
-	DotLog.info("effects", "%d effects defined" % _defs.size())
-	return DotResult.success(null)
+	GSLog.info("effects", "%d effects defined" % _defs.size())
+	return GSResult.success(null)
 
 
 ## Add one effect to the table. Refuses a duplicate rather than replacing it.
-func define(def: DotEffectDef) -> DotResult:
+func define(def: GSEffectDef) -> GSResult:
 	if def == null:
-		return DotResult.fail(DotError.CODE_INVALID, "A null effect definition.")
+		return GSResult.fail(GSError.CODE_INVALID, "A null effect definition.")
 	var res := def.validate()
 	if not res.ok:
 		return res
 	if _defs.has(def.id) and _defs[def.id] != def:
-		return DotResult.fail(
-			DotError.CODE_INVALID,
+		return GSResult.fail(
+			GSError.CODE_INVALID,
 			(
 				"Two effects are called '%s'. An id is what a wire form, a HUD and a "
 				+ "weapon all refer to, so a duplicate silently makes two of them one."
@@ -131,10 +131,10 @@ func define(def: DotEffectDef) -> DotResult:
 	_defs[def.id] = def
 	if not definitions.has(def):
 		definitions.append(def)
-	return DotResult.success(null)
+	return GSResult.success(null)
 
 
-func definition(id: StringName) -> DotEffectDef:
+func definition(id: StringName) -> GSEffectDef:
 	return _defs.get(id, null)
 
 
@@ -149,24 +149,24 @@ func has_definition(id: StringName) -> bool:
 ## Refuses rather than silently doing nothing, and the refusals matter: an immunity, a
 ## per-entity cap and an unknown id are three very different problems that all look like
 ## "the burn did not apply".
-func apply(id: StringName, entity: int, source: int = 0) -> DotResult:
+func apply(id: StringName, entity: int, source: int = 0) -> GSResult:
 	if not authoritative:
-		return DotResult.fail(
-			DotError.CODE_STATE,
+		return GSResult.fail(
+			GSError.CODE_STATE,
 			"A mirroring effect manager does not apply effects; it is told about them."
 		)
 
-	var def: DotEffectDef = _defs.get(id, null)
+	var def: GSEffectDef = _defs.get(id, null)
 	if def == null:
-		return DotResult.fail(
-			DotError.CODE_INVALID, "No effect is defined as '%s'." % id
+		return GSResult.fail(
+			GSError.CODE_INVALID, "No effect is defined as '%s'." % id
 		)
 
 	var state := state_of(entity)
 
 	if state.is_immune_to(def):
-		return DotResult.fail(
-			DotError.CODE_FORBIDDEN,
+		return GSResult.fail(
+			GSError.CODE_FORBIDDEN,
 			"Entity %d is immune to '%s'." % [entity, id]
 		)
 
@@ -179,55 +179,55 @@ func apply(id: StringName, entity: int, source: int = 0) -> DotResult:
 	var existing := state.find(id, source if def.per_source else -1)
 	if existing != null:
 		match def.stacking:
-			DotEffectDef.Stacking.IGNORE:
-				return DotResult.fail(
-					DotError.CODE_STATE,
+			GSEffectDef.Stacking.IGNORE:
+				return GSResult.fail(
+					GSError.CODE_STATE,
 					"'%s' is already on entity %d and does not reapply." % [id, entity]
 				)
-			DotEffectDef.Stacking.REFRESH:
+			GSEffectDef.Stacking.REFRESH:
 				existing.refresh(_tick)
 				applied.emit(entity, id, source, existing.stacks)
-				return DotResult.success(existing)
-			DotEffectDef.Stacking.EXTEND:
+				return GSResult.success(existing)
+			GSEffectDef.Stacking.EXTEND:
 				existing.extend(_tick)
 				applied.emit(entity, id, source, existing.stacks)
-				return DotResult.success(existing)
-			DotEffectDef.Stacking.STACK:
+				return GSResult.success(existing)
+			GSEffectDef.Stacking.STACK:
 				if not rules.allow_stacking:
 					existing.refresh(_tick)
 					applied.emit(entity, id, source, existing.stacks)
-					return DotResult.success(existing)
+					return GSResult.success(existing)
 				if existing.stacks >= def.max_stacks:
 					existing.refresh(_tick)
 					applied.emit(entity, id, source, existing.stacks)
-					return DotResult.success(existing)
+					return GSResult.success(existing)
 				existing.stacks += 1
 				existing.refresh(_tick)
 				state.recompute()
 				applied.emit(entity, id, source, existing.stacks)
-				return DotResult.success(existing)
+				return GSResult.success(existing)
 
 	if rules.max_per_entity > 0 and state.count() >= rules.max_per_entity:
-		return DotResult.fail(
-			DotError.CODE_QUOTA,
+		return GSResult.fail(
+			GSError.CODE_QUOTA,
 			(
 				"Entity %d already carries %d effects. An effect applied by a weapon "
 				+ "is one applied as fast as that weapon fires."
 			) % [entity, state.count()]
 		)
 
-	var inst := DotEffectInstance.make(def, _tick, source)
+	var inst := GSEffectInstance.make(def, _tick, source)
 	state.instances.append(inst)
 	state.recompute()
 	applied.emit(entity, id, source, inst.stacks)
-	return DotResult.success(inst)
+	return GSResult.success(inst)
 
 
 ## Take one off. [param source] of -1 removes every instance of it.
-func remove(id: StringName, entity: int, source: int = -1) -> DotResult:
-	var state: DotEffectState = _states.get(entity, null)
+func remove(id: StringName, entity: int, source: int = -1) -> GSResult:
+	var state: GSEffectState = _states.get(entity, null)
 	if state == null:
-		return DotResult.fail(DotError.CODE_INVALID, "Entity %d has none." % entity)
+		return GSResult.fail(GSError.CODE_INVALID, "Entity %d has none." % entity)
 
 	var taken := 0
 	for i in range(state.instances.size() - 1, -1, -1):
@@ -240,24 +240,24 @@ func remove(id: StringName, entity: int, source: int = -1) -> DotResult:
 		taken += 1
 
 	if taken == 0:
-		return DotResult.fail(
-			DotError.CODE_STATE, "Entity %d does not have '%s'." % [entity, id]
+		return GSResult.fail(
+			GSError.CODE_STATE, "Entity %d does not have '%s'." % [entity, id]
 		)
 
 	state.recompute()
 	removed.emit(entity, id, &"removed")
-	return DotResult.success(taken)
+	return GSResult.success(taken)
 
 
 ## Take off everything with a tag. What a cleanse does.
 func remove_tagged(entity: int, tag: String) -> int:
-	var state: DotEffectState = _states.get(entity, null)
+	var state: GSEffectState = _states.get(entity, null)
 	if state == null:
 		return 0
 	return _remove_tagged(state, tag, &"cured")
 
 
-func _remove_tagged(state: DotEffectState, tag: String, reason: StringName) -> int:
+func _remove_tagged(state: GSEffectState, tag: String, reason: StringName) -> int:
 	var taken := 0
 	for i in range(state.instances.size() - 1, -1, -1):
 		var inst := state.instances[i]
@@ -273,16 +273,16 @@ func _remove_tagged(state: DotEffectState, tag: String, reason: StringName) -> i
 
 
 ## Everything an entity has. Created on demand, so a caller never gets a null.
-func state_of(entity: int) -> DotEffectState:
-	var state: DotEffectState = _states.get(entity, null)
+func state_of(entity: int) -> GSEffectState:
+	var state: GSEffectState = _states.get(entity, null)
 	if state == null:
-		state = DotEffectState.new(entity)
+		state = GSEffectState.new(entity)
 		_states[entity] = state
 	return state
 
 
 func has(entity: int, id: StringName) -> bool:
-	var state: DotEffectState = _states.get(entity, null)
+	var state: GSEffectState = _states.get(entity, null)
 	return state != null and state.has(id)
 
 
@@ -297,80 +297,80 @@ func forget(entity: int) -> void:
 # --- The aggregate, for a game to ask -------------------------------------
 
 func damage_taken_scale(entity: int) -> float:
-	var state: DotEffectState = _states.get(entity, null)
+	var state: GSEffectState = _states.get(entity, null)
 	return state.damage_taken_scale() if state != null else 1.0
 
 
 func damage_dealt_scale(entity: int) -> float:
-	var state: DotEffectState = _states.get(entity, null)
+	var state: GSEffectState = _states.get(entity, null)
 	return state.damage_dealt_scale() if state != null else 1.0
 
 
 func move_speed_scale(entity: int) -> float:
-	var state: DotEffectState = _states.get(entity, null)
+	var state: GSEffectState = _states.get(entity, null)
 	return state.move_speed_scale() if state != null else 1.0
 
 
 func is_invulnerable(entity: int) -> bool:
-	var state: DotEffectState = _states.get(entity, null)
+	var state: GSEffectState = _states.get(entity, null)
 	return state != null and state.is_invulnerable()
 
 
 func may_capture(entity: int) -> bool:
-	var state: DotEffectState = _states.get(entity, null)
+	var state: GSEffectState = _states.get(entity, null)
 	if state != null and not state.may_capture():
 		return false
 	return not is_down(entity)
 
 
 func may_attack(entity: int) -> bool:
-	var state: DotEffectState = _states.get(entity, null)
+	var state: GSEffectState = _states.get(entity, null)
 	if state != null and not state.may_attack():
 		return false
 	return not is_down(entity)
 
 
 func may_move(entity: int) -> bool:
-	var state: DotEffectState = _states.get(entity, null)
+	var state: GSEffectState = _states.get(entity, null)
 	if state != null and not state.may_move():
 		return false
 	return not is_down(entity)
 
 
 ## [b]These, and [method ignores_falloff] below, are on the state and were once only on the state.[/b] A game holds
-## a manager, not a [DotEffectState], so an aggregate with no facade here is one that is
+## a manager, not a [GSEffectState], so an aggregate with no facade here is one that is
 ## recomputed on every mutation and asked for by nobody — and the asymmetry is worse than
 ## the absence: somebody who wires [method may_move] from the manager and then looks for
 ## [method may_jump] beside it concludes this addon has no such concept, when the field,
 ## the aggregation and the wire format have all been carrying it the whole time.
 func may_jump(entity: int) -> bool:
-	var state: DotEffectState = _states.get(entity, null)
+	var state: GSEffectState = _states.get(entity, null)
 	if state != null and not state.may_jump():
 		return false
 	return not is_down(entity)
 
 
 func jump_scale(entity: int) -> float:
-	var state: DotEffectState = _states.get(entity, null)
+	var state: GSEffectState = _states.get(entity, null)
 	return state.jump_scale() if state != null else 1.0
 
 
 func fire_rate_scale(entity: int) -> float:
-	var state: DotEffectState = _states.get(entity, null)
+	var state: GSEffectState = _states.get(entity, null)
 	return state.fire_rate_scale() if state != null else 1.0
 
 
 ## Whether this entity's attacks ignore damage falloff with distance (a strong damage
-## buff sets it). The last aggregate that was only on [DotEffectState]: see the note
+## buff sets it). The last aggregate that was only on [GSEffectState]: see the note
 ## above [method may_jump] for why every one needs a facade here.
 func ignores_falloff(entity: int) -> bool:
-	var state: DotEffectState = _states.get(entity, null)
+	var state: GSEffectState = _states.get(entity, null)
 	return state != null and state.ignores_falloff()
 
 
 ## The one call a damage resolver wants: how much of this actually lands.
 ##
-## Pointed at [member DotDamageResolver.adjust] in every game here, which is why it
+## Pointed at [member GSDamageResolver.adjust] in every game here, which is why it
 ## takes both ends — an attacker's crit and a victim's resistance are one number to
 ## the thing applying it, and asking for them separately is two chances to forget one.
 func scale_damage(amount: float, attacker: int, victim: int) -> float:
@@ -382,16 +382,16 @@ func scale_damage(amount: float, attacker: int, victim: int) -> float:
 # --- Downed ------------------------------------------------------------------
 
 ## The state of an entity's incapacitation, created on demand.
-func downed_state(entity: int) -> DotDowned:
-	var d: DotDowned = _downed.get(entity, null)
+func downed_state(entity: int) -> GSDowned:
+	var d: GSDowned = _downed.get(entity, null)
 	if d == null:
-		d = DotDowned.new(entity)
+		d = GSDowned.new(entity)
 		_downed[entity] = d
 	return d
 
 
 func is_down(entity: int) -> bool:
-	var d: DotDowned = _downed.get(entity, null)
+	var d: GSDowned = _downed.get(entity, null)
 	return d != null and d.is_down()
 
 
@@ -401,11 +401,11 @@ func is_down(entity: int) -> bool:
 ## that asks "am I in a mode with incapacitation" at every damage site has as many
 ## copies of the rule as it has damage sites, and the copies drift.
 ##
-## Returns a [DotResult] whose value is [code]&"down"[/code] or [code]&"dead"[/code].
-func report_zero_health(entity: int, tick: int = -1) -> DotResult:
+## Returns a [GSResult] whose value is [code]&"down"[/code] or [code]&"dead"[/code].
+func report_zero_health(entity: int, tick: int = -1) -> GSResult:
 	var at := tick if tick >= 0 else _tick
 	if not rules.downed_enabled:
-		return DotResult.success(&"dead")
+		return GSResult.success(&"dead")
 
 	var d := downed_state(entity)
 	if d.is_down():
@@ -415,74 +415,74 @@ func report_zero_health(entity: int, tick: int = -1) -> DotResult:
 	if d.is_last_life(rules):
 		return _kill(d, &"final")
 
-	d.state = DotDowned.State.DOWN
+	d.state = GSDowned.State.DOWN
 	d.health = rules.downed_health
 	d.progress = 0.0
 	d.clear_revivers()
 	d.incaps += 1
 	d.down_at = at
 	downed.emit(entity, d.incaps)
-	return DotResult.success(&"down")
+	return GSResult.success(&"down")
 
 
-func _kill(d: DotDowned, reason: StringName) -> DotResult:
-	d.state = DotDowned.State.DEAD
+func _kill(d: GSDowned, reason: StringName) -> GSResult:
+	d.state = GSDowned.State.DEAD
 	d.health = 0.0
 	d.clear_revivers()
 	d.progress = 0.0
 	died.emit(d.entity, reason)
-	return DotResult.success(&"dead")
+	return GSResult.success(&"dead")
 
 
 ## Start picking somebody up.
-func begin_revive(entity: int, by: int) -> DotResult:
+func begin_revive(entity: int, by: int) -> GSResult:
 	if not authoritative:
-		return DotResult.fail(DotError.CODE_STATE, "A mirror does not revive anybody.")
-	var d: DotDowned = _downed.get(entity, null)
+		return GSResult.fail(GSError.CODE_STATE, "A mirror does not revive anybody.")
+	var d: GSDowned = _downed.get(entity, null)
 	if d == null or not d.is_down():
-		return DotResult.fail(
-			DotError.CODE_STATE, "Entity %d is not down." % entity
+		return GSResult.fail(
+			GSError.CODE_STATE, "Entity %d is not down." % entity
 		)
 	if by == entity:
-		return DotResult.fail(
-			DotError.CODE_FORBIDDEN, "Nobody picks themselves up."
+		return GSResult.fail(
+			GSError.CODE_FORBIDDEN, "Nobody picks themselves up."
 		)
 	if is_down(by):
-		return DotResult.fail(
-			DotError.CODE_STATE, "Entity %d is down and cannot revive anybody." % by
+		return GSResult.fail(
+			GSError.CODE_STATE, "Entity %d is down and cannot revive anybody." % by
 		)
 	if allies_fn.is_valid() and not bool(allies_fn.call(by, entity)):
-		return DotResult.fail(
-			DotError.CODE_FORBIDDEN, "Entity %d is not on that side." % by
+		return GSResult.fail(
+			GSError.CODE_FORBIDDEN, "Entity %d is not on that side." % by
 		)
 	var near := _within_revive_range(by, entity)
 	if not near.ok:
 		return near
 
-	if d.state == DotDowned.State.REVIVING and (d.reviver == by or d.helpers.has(by)):
-		return DotResult.success(null)
+	if d.state == GSDowned.State.REVIVING and (d.reviver == by or d.helpers.has(by)):
+		return GSResult.success(null)
 
 	# A second pair of hands joins the revive when the rules say it counts. Before, the
 	# second begin_revive replaced the first reviver and `revivers` stayed 1, so
 	# downed_revive_scales could never do anything.
-	if d.state == DotDowned.State.REVIVING and rules.downed_revive_scales:
+	if d.state == GSDowned.State.REVIVING and rules.downed_revive_scales:
 		d.helpers.append(by)
 		d.revivers = 1 + d.helpers.size()
 		revive_started.emit(entity, by)
-		return DotResult.success(null)
+		return GSResult.success(null)
 
-	d.state = DotDowned.State.REVIVING
+	d.state = GSDowned.State.REVIVING
 	d.clear_revivers()
 	d.reviver = by
 	revive_started.emit(entity, by)
-	return DotResult.success(null)
+	return GSResult.success(null)
 
 
 ## One reviver lets go, the others carry on: a helper leaves, or the reviver hands over to
 ## the first helper. With nobody left it is [method cancel_revive].
 func leave_revive(entity: int, by: int, reason: StringName = &"cancelled") -> void:
-	var d: DotDowned = _downed.get(entity, null)
-	if d == null or d.state != DotDowned.State.REVIVING:
+	var d: GSDowned = _downed.get(entity, null)
+	if d == null or d.state != GSDowned.State.REVIVING:
 		return
 	if d.helpers.has(by):
 		d.helpers.erase(by)
@@ -497,10 +497,10 @@ func leave_revive(entity: int, by: int, reason: StringName = &"cancelled") -> vo
 
 
 func cancel_revive(entity: int, reason: StringName = &"cancelled") -> void:
-	var d: DotDowned = _downed.get(entity, null)
-	if d == null or d.state != DotDowned.State.REVIVING:
+	var d: GSDowned = _downed.get(entity, null)
+	if d == null or d.state != GSDowned.State.REVIVING:
 		return
-	d.state = DotDowned.State.DOWN
+	d.state = GSDowned.State.DOWN
 	d.clear_revivers()
 	# The progress is deliberately thrown away. Keeping it makes a revive something two
 	# players can chip at from cover, which removes the whole reason it is a decision.
@@ -509,28 +509,28 @@ func cancel_revive(entity: int, reason: StringName = &"cancelled") -> void:
 
 
 ## Bring somebody back from dead. A defibrillator, a respawn closet, an admin.
-func defibrillate(entity: int, by: int = 0) -> DotResult:
-	var d: DotDowned = _downed.get(entity, null)
-	if d == null or d.state != DotDowned.State.DEAD:
-		return DotResult.fail(DotError.CODE_STATE, "Entity %d is not dead." % entity)
+func defibrillate(entity: int, by: int = 0) -> GSResult:
+	var d: GSDowned = _downed.get(entity, null)
+	if d == null or d.state != GSDowned.State.DEAD:
+		return GSResult.fail(GSError.CODE_STATE, "Entity %d is not dead." % entity)
 	if rules.downed_defib_health <= 0.0:
-		return DotResult.fail(
-			DotError.CODE_UNSUPPORTED, "This game has no revive-from-dead."
+		return GSResult.fail(
+			GSError.CODE_UNSUPPORTED, "This game has no revive-from-dead."
 		)
-	d.state = DotDowned.State.UP
+	d.state = GSDowned.State.UP
 	d.health = 0.0
 	d.progress = 0.0
 	d.clear_revivers()
 	revived.emit(entity, by, rules.downed_defib_health)
-	return DotResult.success(rules.downed_defib_health)
+	return GSResult.success(rules.downed_defib_health)
 
 
 ## Put somebody back on their feet without any of the above. A round reset.
 func stand_up(entity: int, reset_incaps: bool = false) -> void:
-	var d: DotDowned = _downed.get(entity, null)
+	var d: GSDowned = _downed.get(entity, null)
 	if d == null:
 		return
-	d.state = DotDowned.State.UP
+	d.state = GSDowned.State.UP
 	d.health = 0.0
 	d.progress = 0.0
 	d.clear_revivers()
@@ -538,25 +538,25 @@ func stand_up(entity: int, reset_incaps: bool = false) -> void:
 		d.incaps = 0
 
 
-func _within_revive_range(by: int, entity: int) -> DotResult:
+func _within_revive_range(by: int, entity: int) -> GSResult:
 	if rules.downed_revive_radius <= 0.0 or not position_fn.is_valid():
-		return DotResult.success(null)
+		return GSResult.success(null)
 	var a: Vector3 = position_fn.call(by)
 	var b: Vector3 = position_fn.call(entity)
 	var d := a.distance_to(b)
 	if d > rules.downed_revive_radius:
-		return DotResult.fail(
-			DotError.CODE_STATE,
+		return GSResult.fail(
+			GSError.CODE_STATE,
 			"Too far to revive (%.1f > %.1f)." % [d, rules.downed_revive_radius]
 		)
-	return DotResult.success(null)
+	return GSResult.success(null)
 
 
 # --- Temporary health --------------------------------------------------------
 
 ## Give an entity health above its maximum. Overheal, pills, adrenaline.
 ##
-## Tracked here rather than in [DotHealth] because it is a *decaying* number with a
+## Tracked here rather than in [GSHealth] because it is a *decaying* number with a
 ## grace period and a source, and because a game with no GameSpice Combat in it still has
 ## pills. The game keeps the real value; this says how much of it is temporary and
 ## emits [signal temp_decayed] as it goes.
@@ -591,7 +591,7 @@ func advance(tick: int) -> void:
 
 func _advance_effects(tick: int) -> void:
 	for entity: Variant in _states.keys():
-		var state: DotEffectState = _states[entity]
+		var state: GSEffectState = _states[entity]
 		if state.is_empty():
 			continue
 
@@ -631,11 +631,11 @@ func _advance_downed(tick: int) -> void:
 		return
 
 	for entity: Variant in _downed.keys():
-		var d: DotDowned = _downed[entity]
+		var d: GSDowned = _downed[entity]
 		if not d.is_down():
 			continue
 
-		if d.state == DotDowned.State.REVIVING:
+		if d.state == GSDowned.State.REVIVING:
 			# Re-tested every tick rather than trusted: a reviver who died, walked away
 			# or went down themselves must stop reviving, and a game that only calls
 			# cancel_revive() from its death handler has one path to get wrong.
@@ -647,7 +647,7 @@ func _advance_downed(tick: int) -> void:
 			if (not still.ok or reviver_down) and not d.helpers.is_empty():
 				# The reviver went, somebody else is still holding: they carry on.
 				leave_revive(int(entity), d.reviver)
-				still = DotResult.success(null)
+				still = GSResult.success(null)
 				reviver_down = false
 			if not still.ok or reviver_down:
 				cancel_revive(int(entity), &"interrupted" if reviver_down else &"moved")
@@ -656,7 +656,7 @@ func _advance_downed(tick: int) -> void:
 				d.progress += rate
 				if d.progress >= float(rules.downed_revive_ticks):
 					var by := d.reviver
-					d.state = DotDowned.State.UP
+					d.state = GSDowned.State.UP
 					d.progress = 0.0
 					d.clear_revivers()
 					d.health = 0.0
@@ -696,7 +696,7 @@ func _advance_temp(tick: int) -> void:
 
 ## An entity died. Clears what says it should be cleared.
 func on_death(entity: int) -> void:
-	var state: DotEffectState = _states.get(entity, null)
+	var state: GSEffectState = _states.get(entity, null)
 	if state != null:
 		for i in range(state.instances.size() - 1, -1, -1):
 			var inst := state.instances[i]
@@ -715,7 +715,7 @@ func on_death(entity: int) -> void:
 	# is a legitimate thing for an entity to be.
 	if rules.downed_enabled:
 		var d := downed_state(entity)
-		d.state = DotDowned.State.DEAD
+		d.state = GSDowned.State.DEAD
 		d.clear_revivers()
 		d.progress = 0.0
 
@@ -723,7 +723,7 @@ func on_death(entity: int) -> void:
 ## A round ended or began. Clears what says it should be cleared, everywhere.
 func on_round_reset() -> void:
 	for entity: Variant in _states.keys():
-		var state: DotEffectState = _states[entity]
+		var state: GSEffectState = _states[entity]
 		for i in range(state.instances.size() - 1, -1, -1):
 			var inst := state.instances[i]
 			if inst.def != null and not inst.def.clear_on_round:
@@ -733,8 +733,8 @@ func on_round_reset() -> void:
 			removed.emit(int(entity), id, &"round")
 		state.recompute()
 	for entity: Variant in _downed.keys():
-		var d: DotDowned = _downed[entity]
-		d.state = DotDowned.State.UP
+		var d: GSDowned = _downed[entity]
+		d.state = GSDowned.State.UP
 		d.health = 0.0
 		d.progress = 0.0
 		d.clear_revivers()
@@ -753,8 +753,8 @@ func on_round_reset() -> void:
 ## offered
 ## "everything" would have made it.
 func to_wire(entity: int) -> Dictionary:
-	var state: DotEffectState = _states.get(entity, null)
-	var d: DotDowned = _downed.get(entity, null)
+	var state: GSEffectState = _states.get(entity, null)
+	var d: GSDowned = _downed.get(entity, null)
 	return {
 		"e": entity,
 		"fx": state.to_wire() if state != null else [],
@@ -772,18 +772,18 @@ func apply_wire(w: Dictionary) -> void:
 	state.instances.clear()
 	for row: Variant in (w.get("fx", []) as Array):
 		var entry := row as Dictionary
-		var def: DotEffectDef = _defs.get(StringName(str(entry.get("i", ""))), null)
+		var def: GSEffectDef = _defs.get(StringName(str(entry.get("i", ""))), null)
 		if def == null:
 			# An effect the client does not have a definition for. Skipping it is right
 			# and saying so is why this is a warning: the alternative is a HUD quietly
 			# missing an icon on a build that is one addon out of date.
-			DotLog.warn(
+			GSLog.warn(
 				"effects",
 				"No definition for effect '%s' sent for entity %d."
 					% [str(entry.get("i", "")), entity]
 			)
 			continue
-		var inst := DotEffectInstance.new()
+		var inst := GSEffectInstance.new()
 		inst.def = def
 		inst.source = int(entry.get("s", 0))
 		inst.expires_at = int(entry.get("e", -1))
@@ -812,7 +812,7 @@ func describe() -> Dictionary:
 func describe_lines() -> PackedStringArray:
 	var out := PackedStringArray()
 	out.append(
-		"DotEffectManager %s tick=%d defs=%d entities=%d"
+		"GSEffectManager %s tick=%d defs=%d entities=%d"
 			% [
 				"authoritative" if authoritative else "mirroring",
 				_tick, _defs.size(), _states.size(),
@@ -821,7 +821,7 @@ func describe_lines() -> PackedStringArray:
 	var ids: Array = _states.keys()
 	ids.sort()
 	for entity: Variant in ids:
-		var state: DotEffectState = _states[entity]
+		var state: GSEffectState = _states[entity]
 		if state.is_empty():
 			continue
 		for line in state.describe_lines():
@@ -829,13 +829,13 @@ func describe_lines() -> PackedStringArray:
 	var down_ids: Array = _downed.keys()
 	down_ids.sort()
 	for entity: Variant in down_ids:
-		var d: DotDowned = _downed[entity]
-		if d.state == DotDowned.State.UP:
+		var d: GSDowned = _downed[entity]
+		if d.state == GSDowned.State.UP:
 			continue
 		out.append(
 			"  entity %d %s %.0f/%.0f incaps=%d"
 				% [
-					int(entity), DotDowned.State.keys()[d.state],
+					int(entity), GSDowned.State.keys()[d.state],
 					d.health, rules.downed_health, d.incaps,
 				]
 		)

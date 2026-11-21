@@ -8,7 +8,7 @@ Bugs found by running it, kept because each could come back. The live rule from 
 
 ## Three aggregates had no facade on the manager
 
-`DotEffectState` computed `jump_scale`, `fire_rate_scale` and `may_jump` on every mutation alongside the five that `DotEffectManager` forwarded, and a game holds a manager, never a state, so those three were reachable only through `state_of()`. `no_jump` was an exported field of `DotEffectDef`, aggregated, and on the wire; the one thing missing was the question.
+`GSEffectState` computed `jump_scale`, `fire_rate_scale` and `may_jump` on every mutation alongside the five that `GSEffectManager` forwarded, and a game holds a manager, never a state, so those three were reachable only through `state_of()`. `no_jump` was an exported field of `GSEffectDef`, aggregated, and on the wire; the one thing missing was the question.
 
 The asymmetry is worse than the absence would have been. Somebody who wires `may_move` off the manager and then looks for `may_jump` beside it finds nothing and concludes this addon has no such concept. That is how a documented field ends up read by nobody without anything ever failing.
 

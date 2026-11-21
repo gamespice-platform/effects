@@ -1,5 +1,5 @@
 @tool
-class_name DotEffectDef
+class_name GSEffectDef
 extends Resource
 
 ## A status effect as a document: burning, healed, invulnerable, slowed, marked.
@@ -20,7 +20,7 @@ extends Resource
 ## disagree.
 ##
 ## [b]It never touches a health value.[/b] A periodic effect emits an amount and the
-## game applies it to whatever it keeps health in — [DotHealth] in every game here.
+## game applies it to whatever it keeps health in — [GSHealth] in every game here.
 ## GameSpice Effects does not import GameSpice Combat, because a slow, a stun and a speed boost are
 ## the same rule in a game with no damage in it at all.
 
@@ -81,7 +81,7 @@ enum Stacking {
 ## Damage per application. Reported, never applied — see the class note.
 @export_range(0.0, 10000.0, 0.1, "or_greater") var damage_per_tick: float = 0.0
 
-## Which [DotDamageType] id the periodic damage is. A string, because GameSpice Combat is not
+## Which [GSDamageType] id the periodic damage is. A string, because GameSpice Combat is not
 ## a dependency and an id is what both ends already agree on.
 @export var damage_type: StringName = &""
 
@@ -133,7 +133,7 @@ enum Stacking {
 
 @export var no_jump: bool = false
 
-## Cannot capture an objective. Feeds [DotObjectivePresence.may_capture_fn] directly,
+## Cannot capture an objective. Feeds [GSObjectivePresence.may_capture_fn] directly,
 ## which is why that seam exists as a callable and not as a boolean on a player.
 @export var no_capture: bool = false
 
@@ -156,8 +156,8 @@ enum Stacking {
 @export var clear_on_round: bool = true
 
 
-static func make(p_id: StringName, p_duration: int) -> DotEffectDef:
-	var d := DotEffectDef.new()
+static func make(p_id: StringName, p_duration: int) -> GSEffectDef:
+	var d := GSEffectDef.new()
 	d.id = p_id
 	d.display_name = String(p_id).capitalize()
 	d.duration_ticks = p_duration
@@ -165,7 +165,7 @@ static func make(p_id: StringName, p_duration: int) -> DotEffectDef:
 
 
 ## Burning: periodic damage, refreshed rather than stacked, cured by anything wet.
-static func burning(p_id: StringName, per_tick: float, ticks: int) -> DotEffectDef:
+static func burning(p_id: StringName, per_tick: float, ticks: int) -> GSEffectDef:
 	var d := make(p_id, ticks)
 	d.tags = PackedStringArray(["fire", "debuff"])
 	d.damage_per_tick = per_tick
@@ -175,7 +175,7 @@ static func burning(p_id: StringName, per_tick: float, ticks: int) -> DotEffectD
 
 
 ## A damage multiplier for what this entity deals. Crit, mini-crit, a damage powerup.
-static func damage_buff(p_id: StringName, scale: float, ticks: int) -> DotEffectDef:
+static func damage_buff(p_id: StringName, scale: float, ticks: int) -> GSEffectDef:
 	var d := make(p_id, ticks)
 	d.tags = PackedStringArray(["buff"])
 	d.damage_dealt_scale = scale
@@ -184,7 +184,7 @@ static func damage_buff(p_id: StringName, scale: float, ticks: int) -> DotEffect
 
 
 ## Invulnerability, with the immunity that has to come with it.
-static func invulnerability(p_id: StringName, ticks: int) -> DotEffectDef:
+static func invulnerability(p_id: StringName, ticks: int) -> GSEffectDef:
 	var d := make(p_id, ticks)
 	d.tags = PackedStringArray(["buff"])
 	d.invulnerable = true
@@ -195,7 +195,7 @@ static func invulnerability(p_id: StringName, ticks: int) -> DotEffectDef:
 
 ## Goo, ink or smoke over the victim's screen. Each application stacks up to [param stacks]; a client mirror reads
 ## the stack count and remaining time (tag `screen_impair`) and feeds them to a screen overlay.
-static func screen_impair(p_id: StringName, ticks: int, stacks: int = 3) -> DotEffectDef:
+static func screen_impair(p_id: StringName, ticks: int, stacks: int = 3) -> GSEffectDef:
 	var d := make(p_id, ticks)
 	d.tags = PackedStringArray(["debuff", "screen_impair"])
 	d.stacking = Stacking.STACK
@@ -204,7 +204,7 @@ static func screen_impair(p_id: StringName, ticks: int, stacks: int = 3) -> DotE
 
 
 ## A movement multiplier. Adrenaline, a slow, concrete boots.
-static func speed(p_id: StringName, scale: float, ticks: int) -> DotEffectDef:
+static func speed(p_id: StringName, scale: float, ticks: int) -> GSEffectDef:
 	var d := make(p_id, ticks)
 	d.tags = PackedStringArray(["buff" if scale > 1.0 else "debuff"])
 	d.move_speed_scale = scale
@@ -219,13 +219,13 @@ func is_periodic() -> bool:
 	return damage_per_tick > 0.0 or heal_per_tick > 0.0
 
 
-func validate() -> DotResult:
+func validate() -> GSResult:
 	if String(id).strip_edges() == "":
-		return DotResult.fail(DotError.CODE_INVALID, "An effect needs an id.")
+		return GSResult.fail(GSError.CODE_INVALID, "An effect needs an id.")
 
 	if duration_ticks == 0 and is_periodic() and tick_interval == 0:
-		return DotResult.fail(
-			DotError.CODE_INVALID,
+		return GSResult.fail(
+			GSError.CODE_INVALID,
 			(
 				"Effect '%s' is permanent, periodic and has no interval, so it applies "
 				+ "its amount every tick for ever. That is not a status effect, it is "
@@ -234,8 +234,8 @@ func validate() -> DotResult:
 		)
 
 	if max_duration_ticks > 0 and max_duration_ticks < duration_ticks:
-		return DotResult.fail(
-			DotError.CODE_INVALID,
+		return GSResult.fail(
+			GSError.CODE_INVALID,
 			(
 				"Effect '%s' has a maximum duration (%d) below its own duration (%d), "
 				+ "so one application already exceeds the cap."
@@ -243,8 +243,8 @@ func validate() -> DotResult:
 		)
 
 	if stacking != Stacking.STACK and max_stacks > 1:
-		return DotResult.fail(
-			DotError.CODE_INVALID,
+		return GSResult.fail(
+			GSError.CODE_INVALID,
 			(
 				"Effect '%s' allows %d stacks and does not stack. One of the two is a "
 				+ "typo, and the field that does nothing is the one nobody notices."
@@ -253,15 +253,15 @@ func validate() -> DotResult:
 
 	for tag in cures:
 		if tags.has(tag):
-			return DotResult.fail(
-				DotError.CODE_INVALID,
+			return GSResult.fail(
+				GSError.CODE_INVALID,
 				(
 					"Effect '%s' cures '%s' and is tagged '%s', so applying it removes "
 					+ "it."
 				) % [id, tag, tag]
 			)
 
-	return DotResult.success(null)
+	return GSResult.success(null)
 
 
 func describe() -> Dictionary:

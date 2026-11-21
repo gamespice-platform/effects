@@ -1,10 +1,10 @@
 @tool
-class_name DotEffectRules
-extends DotConfig
+class_name GSEffectRules
+extends GSConfig
 
 ## Every policy about effects in general, and the whole of the downed/revive half.
 ##
-## Layered like every [DotConfig] here. The downed numbers come from the co-operative
+## Layered like every [GSConfig] here. The downed numbers come from the co-operative
 ## survival shooters, where being incapacitated rather than killed is the central
 ## mechanic and the values are twenty years of playtesting away from obvious.
 
@@ -82,22 +82,22 @@ func cli_prefix() -> String:
 	return "--effects-"
 
 
-func validate() -> DotResult:
+func validate() -> GSResult:
 	if max_per_entity < 0:
-		return DotResult.fail(
-			DotError.CODE_INVALID,
+		return GSResult.fail(
+			GSError.CODE_INVALID,
 			"max_per_entity %d is negative; 0 means unlimited." % max_per_entity
 		)
 	if downed_enabled and downed_bleed_per_tick <= 0.0 and downed_health > 0.0:
-		return DotResult.fail(
-			DotError.CODE_INVALID,
+		return GSResult.fail(
+			GSError.CODE_INVALID,
 			(
 				"Downed entities never bleed out, so a player nobody revives is down "
 				+ "for the rest of the round with nothing saying why. Set a bleed rate "
 				+ "or turn downed off."
 			)
 		)
-	return DotResult.success(null)
+	return GSResult.success(null)
 
 
 ## How long a bleed-out takes from full, in ticks. What a HUD needs to draw the bar.

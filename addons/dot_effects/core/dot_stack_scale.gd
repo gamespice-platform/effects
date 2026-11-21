@@ -1,4 +1,4 @@
-class_name DotStackScale
+class_name GSStackScale
 extends RefCounted
 
 ## Pure arithmetic for values that move with a stack count (a debuff, a Hard Box, a heat level).

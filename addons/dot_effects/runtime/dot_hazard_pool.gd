@@ -1,4 +1,4 @@
-class_name DotHazardPool
+class_name GSHazardPool
 extends RefCounted
 
 ## Ground hazards the server simulates and announces once: puddles of acid, goo or oil that hurt whoever stands in them.
@@ -29,9 +29,9 @@ var _slow: Dictionary = {}
 var _trails: Dictionary = {}
 
 
-## Lays a puddle. [param amount] below 0 uses [member DotHazardProfile.dps] as the full rate; otherwise the full rate
-## is amount times [member DotHazardProfile.amount_mult]. Evicts the oldest puddle of the owner or kind first when a cap is full.
-func add(profile: DotHazardProfile, at: Vector3, now: float, owner: int = 0, amount: float = -1.0,
+## Lays a puddle. [param amount] below 0 uses [member GSHazardProfile.dps] as the full rate; otherwise the full rate
+## is amount times [member GSHazardProfile.amount_mult]. Evicts the oldest puddle of the owner or kind first when a cap is full.
+func add(profile: GSHazardProfile, at: Vector3, now: float, owner: int = 0, amount: float = -1.0,
 		radius: float = -1.0, seconds: float = -1.0) -> int:
 	_enforce_caps(profile, owner)
 	var id := id_source.call() as int if id_source.is_valid() else _take_id()
@@ -64,18 +64,18 @@ func radius_at(id: int, now: float) -> float:
 	if not areas.has(id):
 		return 0.0
 	var a: Dictionary = areas[id]
-	var p: DotHazardProfile = a["profile"]
+	var p: GSHazardProfile = a["profile"]
 	if p.grow_seconds <= 0.0:
 		return float(a["radius"])
 	return float(a["radius"]) * clampf((now - float(a["since"])) / p.grow_seconds, p.start_fraction, 1.0)
 
 
-## 1 until [member DotHazardProfile.fade_seconds] before the end, then falling to 0.
+## 1 until [member GSHazardProfile.fade_seconds] before the end, then falling to 0.
 func alpha_of(id: int, now: float) -> float:
 	if not areas.has(id):
 		return 0.0
 	var a: Dictionary = areas[id]
-	var fade := (a["profile"] as DotHazardProfile).fade_seconds
+	var fade := (a["profile"] as GSHazardProfile).fade_seconds
 	if fade <= 0.0:
 		return 1.0
 	return clampf((float(a["until"]) - now) / fade, 0.0, 1.0)
@@ -101,7 +101,7 @@ func tick(now: float, delta: float) -> void:
 		if not occupants.is_valid():
 			continue
 
-		var p: DotHazardProfile = a["profile"]
+		var p: GSHazardProfile = a["profile"]
 		var at: Vector3 = a["at"]
 		var full: float = float(a["amount"]) * p.amount_mult
 		var inside: Array = occupants.call(at, radius_at(id, now), p.reach)
@@ -118,9 +118,9 @@ func tick(now: float, delta: float) -> void:
 	_slow = slow_now
 
 
-## Drops a puddle behind a moving [param owner] at [param pos] when it has gone [member DotHazardProfile.trail_spacing]
-## since the last one and [member DotHazardProfile.trail_interval] has passed. Returns the id, or 0 when none dropped.
-func trail(profile: DotHazardProfile, owner: int, pos: Vector3, now: float) -> int:
+## Drops a puddle behind a moving [param owner] at [param pos] when it has gone [member GSHazardProfile.trail_spacing]
+## since the last one and [member GSHazardProfile.trail_interval] has passed. Returns the id, or 0 when none dropped.
+func trail(profile: GSHazardProfile, owner: int, pos: Vector3, now: float) -> int:
 	var t: Dictionary = _trails.get(owner, {})
 
 	if not t.is_empty():
@@ -150,7 +150,7 @@ func describe() -> Dictionary:
 	return {"areas": areas.size(), "trails": _trails.size()}
 
 
-func _pay(a: Dictionary, victim: Variant, rate: float, delta: float, p: DotHazardProfile) -> void:
+func _pay(a: Dictionary, victim: Variant, rate: float, delta: float, p: GSHazardProfile) -> void:
 	if p.tick_interval <= 0.0:
 		_deliver(victim, rate * delta, int(a["owner"]), p.kind)
 		return
@@ -172,7 +172,7 @@ func _deliver(victim: Variant, amount: float, owner: int, kind: StringName) -> v
 	damaged.emit(victim, amount, owner, kind)
 
 
-func _enforce_caps(profile: DotHazardProfile, owner: int) -> void:
+func _enforce_caps(profile: GSHazardProfile, owner: int) -> void:
 	if profile.max_per_owner > 0:
 		while count(profile.kind, owner) >= profile.max_per_owner:
 			remove(_oldest(profile.kind, owner))

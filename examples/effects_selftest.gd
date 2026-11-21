@@ -17,7 +17,7 @@ const CHECKS := 150
 
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.ERROR)
+	GSLog.set_level(GSLog.Level.ERROR)
 	_run()
 
 
@@ -65,19 +65,19 @@ func _run() -> void:
 func _test_definitions() -> void:
 	_section("definitions")
 
-	var burn := DotEffectDef.burning(&"afterburn", 3.0, 10 * RATE)
+	var burn := GSEffectDef.burning(&"afterburn", 3.0, 10 * RATE)
 	_check(burn.validate().ok, "a burning definition validates")
 	_check(burn.is_periodic(), "and is periodic")
 	_check(burn.has_tag("fire"), "and is tagged fire")
 
-	var crit := DotEffectDef.damage_buff(&"crit", 3.0, 5 * RATE)
+	var crit := GSEffectDef.damage_buff(&"crit", 3.0, 5 * RATE)
 	_check(crit.validate().ok, "a damage buff validates")
 	_check(
 		crit.ignores_falloff,
 		"a triple-damage buff ignores falloff, because a crit is both"
 	)
 
-	var uber := DotEffectDef.invulnerability(&"uber", 8 * RATE)
+	var uber := GSEffectDef.invulnerability(&"uber", 8 * RATE)
 	_check(uber.invulnerable, "invulnerability is a flag rather than a zero multiplier")
 	_check(
 		uber.immune_to.has("debuff"),
@@ -88,7 +88,7 @@ func _test_definitions() -> void:
 		"and may not capture, which is what makes may_capture_fn a callable"
 	)
 
-	var leak := DotEffectDef.make(&"leak", 0)
+	var leak := GSEffectDef.make(&"leak", 0)
 	leak.damage_per_tick = 1.0
 	leak.tick_interval = 0
 	_check(
@@ -97,7 +97,7 @@ func _test_definitions() -> void:
 		+ "effect, it is a leak with a name"
 	)
 
-	var stacky := DotEffectDef.make(&"stacky", RATE)
+	var stacky := GSEffectDef.make(&"stacky", RATE)
 	stacky.max_stacks = 4
 	_check(
 		not stacky.validate().ok,
@@ -105,7 +105,7 @@ func _test_definitions() -> void:
 		+ "the field that does nothing is the one nobody notices"
 	)
 
-	var contradiction := DotEffectDef.make(&"wet", RATE)
+	var contradiction := GSEffectDef.make(&"wet", RATE)
 	contradiction.tags = PackedStringArray(["fire"])
 	contradiction.cures = PackedStringArray(["fire"])
 	_check(
@@ -113,21 +113,21 @@ func _test_definitions() -> void:
 		"an effect that cures its own tag is refused: applying it removes it"
 	)
 
-	var capped := DotEffectDef.make(&"capped", 10 * RATE)
+	var capped := GSEffectDef.make(&"capped", 10 * RATE)
 	capped.max_duration_ticks = 5 * RATE
 	_check(
 		not capped.validate().ok,
 		"a maximum duration below the duration is refused"
 	)
 
-	var no_id := DotEffectDef.new()
+	var no_id := GSEffectDef.new()
 	_check(not no_id.validate().ok, "and an effect with no id")
 
 
 func _test_rules() -> void:
 	_section("rules")
 
-	var rules := DotEffectRules.new()
+	var rules := GSEffectRules.new()
 	_check(rules.validate().ok, "the defaults validate")
 	_check(
 		not rules.downed_enabled,
@@ -156,7 +156,7 @@ func _test_apply_and_expire() -> void:
 	_section("applying and expiring")
 
 	var m := _manager()
-	var _d := m.define(DotEffectDef.speed(&"slow", 0.5, 2 * RATE))
+	var _d := m.define(GSEffectDef.speed(&"slow", 0.5, 2 * RATE))
 
 	var events: Array[StringName] = []
 	m.applied.connect(func(_e: int, id: StringName, _s: int, _n: int) -> void:
@@ -197,29 +197,29 @@ func _test_stacking() -> void:
 
 	var m := _manager()
 
-	var refresh := DotEffectDef.burning(&"burn", 1.0, 2 * RATE)
-	refresh.stacking = DotEffectDef.Stacking.REFRESH
+	var refresh := GSEffectDef.burning(&"burn", 1.0, 2 * RATE)
+	refresh.stacking = GSEffectDef.Stacking.REFRESH
 	var _d1 := m.define(refresh)
 
-	var stack := DotEffectDef.make(&"bleed", 2 * RATE)
-	stack.stacking = DotEffectDef.Stacking.STACK
+	var stack := GSEffectDef.make(&"bleed", 2 * RATE)
+	stack.stacking = GSEffectDef.Stacking.STACK
 	stack.max_stacks = 3
 	stack.damage_per_tick = 1.0
 	stack.tick_interval = RATE
 	var _d2 := m.define(stack)
 
-	var extend := DotEffectDef.make(&"charge", RATE)
-	extend.stacking = DotEffectDef.Stacking.EXTEND
+	var extend := GSEffectDef.make(&"charge", RATE)
+	extend.stacking = GSEffectDef.Stacking.EXTEND
 	extend.max_duration_ticks = 3 * RATE
 	var _d3 := m.define(extend)
 
-	var once := DotEffectDef.make(&"marked", 2 * RATE)
-	once.stacking = DotEffectDef.Stacking.IGNORE
+	var once := GSEffectDef.make(&"marked", 2 * RATE)
+	once.stacking = GSEffectDef.Stacking.IGNORE
 	var _d4 := m.define(once)
 
 	m.advance(100)
 	var _a1 := m.apply(&"burn", 1)
-	var first: DotEffectInstance = m.state_of(1).find(&"burn")
+	var first: GSEffectInstance = m.state_of(1).find(&"burn")
 	var expiry := first.expires_at
 	m.advance(150)
 	var _a2 := m.apply(&"burn", 1)
@@ -275,7 +275,7 @@ func _test_periodic() -> void:
 	_section("periodic effects report rather than apply")
 
 	var m := _manager()
-	var burn := DotEffectDef.burning(&"burn", 3.0, 4 * RATE)
+	var burn := GSEffectDef.burning(&"burn", 3.0, 4 * RATE)
 	burn.tick_interval = RATE / 2
 	var _d := m.define(burn)
 
@@ -300,7 +300,7 @@ func _test_periodic() -> void:
 		"and nothing in dot-effects owns a health value to have changed"
 	)
 
-	var heal := DotEffectDef.make(&"medic", 4 * RATE)
+	var heal := GSEffectDef.make(&"medic", 4 * RATE)
 	heal.heal_per_tick = 4.0
 	heal.heal_overheals = true
 	heal.tick_interval = RATE / 4
@@ -317,8 +317,8 @@ func _test_periodic() -> void:
 	_check(overheals[0], "and says whether it may go above the maximum")
 
 	# Stacks multiply the amount.
-	var stack := DotEffectDef.make(&"bleed", 4 * RATE)
-	stack.stacking = DotEffectDef.Stacking.STACK
+	var stack := GSEffectDef.make(&"bleed", 4 * RATE)
+	stack.stacking = GSEffectDef.Stacking.STACK
 	stack.max_stacks = 3
 	stack.damage_per_tick = 2.0
 	stack.tick_interval = RATE
@@ -340,10 +340,10 @@ func _test_aggregate() -> void:
 	_section("the aggregate")
 
 	var m := _manager()
-	var _d1 := m.define(DotEffectDef.speed(&"slow_a", 0.5, 10 * RATE))
-	var _d2 := m.define(DotEffectDef.speed(&"slow_b", 0.5, 10 * RATE))
-	var _d3 := m.define(DotEffectDef.damage_buff(&"crit", 3.0, 10 * RATE))
-	var vuln := DotEffectDef.make(&"doused", 10 * RATE)
+	var _d1 := m.define(GSEffectDef.speed(&"slow_a", 0.5, 10 * RATE))
+	var _d2 := m.define(GSEffectDef.speed(&"slow_b", 0.5, 10 * RATE))
+	var _d3 := m.define(GSEffectDef.damage_buff(&"crit", 3.0, 10 * RATE))
+	var vuln := GSEffectDef.make(&"doused", 10 * RATE)
 	vuln.damage_taken_scale = 1.35
 	var _d4 := m.define(vuln)
 
@@ -363,7 +363,7 @@ func _test_aggregate() -> void:
 		+ "applying it"
 	)
 
-	var _d5 := m.define(DotEffectDef.invulnerability(&"uber", 10 * RATE))
+	var _d5 := m.define(GSEffectDef.invulnerability(&"uber", 10 * RATE))
 	var _u := m.apply(&"uber", 3)
 	_check(
 		m.scale_damage(100.0, 2, 3) == 0.0,
@@ -372,7 +372,7 @@ func _test_aggregate() -> void:
 	_check(m.is_invulnerable(3), "which is a flag, not a zero")
 	_check(not m.may_capture(3), "and an invulnerable player captures nothing")
 
-	var stun := DotEffectDef.make(&"stun", 10 * RATE)
+	var stun := GSEffectDef.make(&"stun", 10 * RATE)
 	stun.no_attack = true
 	stun.no_move = true
 	var _d6 := m.define(stun)
@@ -384,7 +384,7 @@ func _test_aggregate() -> void:
 	# Every aggregate the state computes is asked for THROUGH THE MANAGER here, because
 	# that is the object a game holds. jump and fire rate had no facade at all and were
 	# reachable only by going round it via state_of().
-	var hobble := DotEffectDef.make(&"hobble", 10 * RATE)
+	var hobble := GSEffectDef.make(&"hobble", 10 * RATE)
 	hobble.no_jump = true
 	hobble.jump_scale = 0.5
 	hobble.fire_rate_scale = 0.25
@@ -398,7 +398,7 @@ func _test_aggregate() -> void:
 	_check(is_equal_approx(m.jump_scale(5), 1.0), "and jumps at full height")
 	_check(is_equal_approx(m.fire_rate_scale(5), 1.0), "and fires at full rate")
 	_check(not m.ignores_falloff(5), "and their damage falls off with distance")
-	var rage := DotEffectDef.make(&"rage", 10 * RATE)
+	var rage := GSEffectDef.make(&"rage", 10 * RATE)
 	rage.ignores_falloff = true
 	var _d8 := m.define(rage)
 	var _r := m.apply(&"rage", 8)
@@ -419,9 +419,9 @@ func _test_immunity_and_cures() -> void:
 	_section("immunity and cures")
 
 	var m := _manager()
-	var _d1 := m.define(DotEffectDef.burning(&"burn", 3.0, 10 * RATE))
-	var _d2 := m.define(DotEffectDef.invulnerability(&"uber", 10 * RATE))
-	var water := DotEffectDef.make(&"soaked", 2 * RATE)
+	var _d1 := m.define(GSEffectDef.burning(&"burn", 3.0, 10 * RATE))
+	var _d2 := m.define(GSEffectDef.invulnerability(&"uber", 10 * RATE))
+	var water := GSEffectDef.make(&"soaked", 2 * RATE)
 	water.cures = PackedStringArray(["fire"])
 	var _d3 := m.define(water)
 
@@ -437,7 +437,7 @@ func _test_immunity_and_cures() -> void:
 		"an invulnerable entity refuses a debuff, from the effect table rather than "
 		+ "from every debuff naming über"
 	)
-	_check(refused.code() == DotError.CODE_FORBIDDEN, "with a forbidden code")
+	_check(refused.code() == GSError.CODE_FORBIDDEN, "with a forbidden code")
 
 	var _cleanse := m.remove_tagged(2, "buff")
 	_check(not m.has(2, &"uber"), "a cleanse by tag takes it off")
@@ -452,14 +452,14 @@ func _test_limits() -> void:
 	var m := _manager()
 	m.rules.max_per_entity = 3
 	for i in range(6):
-		var _d := m.define(DotEffectDef.make(StringName("e%d" % i), 100 * RATE))
+		var _d := m.define(GSEffectDef.make(StringName("e%d" % i), 100 * RATE))
 
 	for i in range(3):
 		_check(m.apply(StringName("e%d" % i), 1).ok, "effect %d applies" % i)
 	var full := m.apply(&"e3", 1)
 	_check(not full.ok, "the fourth is refused")
 	_check(
-		full.code() == DotError.CODE_QUOTA,
+		full.code() == GSError.CODE_QUOTA,
 		"with a quota code, because an effect applied by a weapon is one applied as "
 		+ "fast as that weapon fires"
 	)
@@ -470,7 +470,7 @@ func _test_limits() -> void:
 	_check(not m.rules.validate().ok, "a negative limit is refused by validate")
 	m.rules.max_per_entity = 3
 
-	var keep := DotEffectDef.make(&"keeper", 100 * RATE)
+	var keep := GSEffectDef.make(&"keeper", 100 * RATE)
 	keep.clear_on_death = false
 	keep.clear_on_round = false
 	var _dk := m.define(keep)

@@ -1,4 +1,4 @@
-class_name DotDowned
+class_name GSDowned
 extends RefCounted
 
 ## One entity, down rather than dead, and how they get back up.
@@ -11,7 +11,7 @@ extends RefCounted
 ## [b]The reviving is deliberately not an effect.[/b] Every other status here is a
 ## multiplier and a duration; this one is a two-party interaction with a distance test,
 ## an interruption rule and a count that persists across the whole round. Squeezing it
-## into [DotEffectDef] would need four fields nothing else uses, and the fields nothing
+## into [GSEffectDef] would need four fields nothing else uses, and the fields nothing
 ## else uses are the ones that are silently wrong.
 
 enum State {
@@ -36,7 +36,7 @@ var reviver: int = 0
 var revivers: int = 1
 
 ## Who else is reviving alongside [member reviver], under
-## [member DotEffectRules.downed_revive_scales]. Empty otherwise.
+## [member GSEffectRules.downed_revive_scales]. Empty otherwise.
 var helpers: Array[int] = []
 
 
@@ -69,14 +69,14 @@ func is_dead() -> bool:
 
 
 ## 0..1 of the way through being picked up.
-func revive_fraction(rules: DotEffectRules) -> float:
+func revive_fraction(rules: GSEffectRules) -> float:
 	if state != State.REVIVING:
 		return 0.0
 	return clampf(progress / float(maxi(rules.downed_revive_ticks, 1)), 0.0, 1.0)
 
 
 ## 0..1 of the bleed-out pool left. What the bar on a downed player shows.
-func bleed_fraction(rules: DotEffectRules) -> float:
+func bleed_fraction(rules: GSEffectRules) -> float:
 	if not is_down():
 		return 0.0
 	return clampf(health / maxf(rules.downed_health, 1.0), 0.0, 1.0)
@@ -87,7 +87,7 @@ func bleed_fraction(rules: DotEffectRules) -> float:
 ## Public because a HUD has to draw it — the black-and-white screen exists to tell a
 ## player that the next one is the last one, and a player who cannot see that is one
 ## who takes the same risk twice.
-func is_last_life(rules: DotEffectRules) -> bool:
+func is_last_life(rules: GSEffectRules) -> bool:
 	if rules.downed_max_incaps <= 0:
 		return false
 	return incaps >= rules.downed_max_incaps
@@ -123,4 +123,4 @@ func apply_wire(w: Dictionary) -> void:
 
 
 func _to_string() -> String:
-	return "DotDowned(%d %s %.0f)" % [entity, State.keys()[state], health]
+	return "GSDowned(%d %s %.0f)" % [entity, State.keys()[state], health]

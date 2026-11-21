@@ -1,7 +1,7 @@
-class_name DotHazardProfile
+class_name GSHazardProfile
 extends RefCounted
 
-## What one kind of ground hazard (acid, goo, oil) does: the document a [DotHazardPool] reads.
+## What one kind of ground hazard (acid, goo, oil) does: the document a [GSHazardPool] reads.
 
 ## Replicated kind name; clients draw the puddle from it.
 var kind: StringName = &"acid"
@@ -17,14 +17,14 @@ var dps_start: float = 2.0
 var ramp_seconds: float = 2.0
 ## Seconds between damage payments; 0 pays every tick.
 var tick_interval: float = 0.0
-## Movement multiplier for victims inside (1 is none); read through [method DotHazardPool.slow_of].
+## Movement multiplier for victims inside (1 is none); read through [method GSHazardPool.slow_of].
 var slow_factor: float = 1.0
 ## Reach above and below the puddle's centre that still counts as inside.
 var reach: float = 1.2
 ## The puddle spreads over this many seconds, starting at [member start_fraction] of its radius.
 var grow_seconds: float = 1.0
 var start_fraction: float = 0.2
-## Seconds before the end that [method DotHazardPool.alpha_of] fades to nothing.
+## Seconds before the end that [method GSHazardPool.alpha_of] fades to nothing.
 var fade_seconds: float = 0.0
 ## Drawing hint for clients; the wire does not carry it.
 var color: Color = Color(0.4, 0.9, 0.2, 0.8)
@@ -38,7 +38,7 @@ var trail_interval: float = 0.2
 ## A trail puddle's radius and life; 0 uses [member radius] and [member seconds].
 var trail_radius: float = 0.0
 var trail_seconds: float = 0.0
-## [method DotHazardPool.add] given an amount sets the full rate to amount times this (acid: 4).
+## [method GSHazardPool.add] given an amount sets the full rate to amount times this (acid: 4).
 var amount_mult: float = 4.0
 
 ## Property name -> [default, min, max] for a game to publish as cvar or profile keys.
@@ -53,13 +53,13 @@ const KEYS := {
 
 
 ## The shipped acid pool of a spitter.
-static func acid() -> DotHazardProfile:
-	return DotHazardProfile.new()
+static func acid() -> GSHazardProfile:
+	return GSHazardProfile.new()
 
 
 ## Reads every key present in [param values] (a GameSpice Profile's values, a cvar dump), clamped; unknown keys are ignored.
-static func from_values(values: Dictionary, base: DotHazardProfile = null) -> DotHazardProfile:
-	var p := base if base != null else DotHazardProfile.new()
+static func from_values(values: Dictionary, base: GSHazardProfile = null) -> GSHazardProfile:
+	var p := base if base != null else GSHazardProfile.new()
 	for key: String in KEYS:
 		if not values.has(key):
 			continue
@@ -81,4 +81,4 @@ func to_values() -> Dictionary:
 
 
 func describe() -> String:
-	return "DotHazardProfile %s r=%.1f %.1fs dps=%.1f cap=%d/%d" % [kind, radius, seconds, dps, max_per_owner, global_cap]
+	return "GSHazardProfile %s r=%.1f %.1fs dps=%.1f cap=%d/%d" % [kind, radius, seconds, dps, max_per_owner, global_cap]

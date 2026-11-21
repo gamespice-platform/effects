@@ -1,16 +1,16 @@
-class_name DotEffectInstance
+class_name GSEffectInstance
 extends RefCounted
 
 ## One application of one effect to one entity.
 ##
-## Separate from [DotEffectDef] for the reason every catalogue in this family separates
+## Separate from [GSEffectDef] for the reason every catalogue in this family separates
 ## them: the definition is shared by every application and mutating it to store "when
 ## does this one expire" would make two burning players one burning player. This family
 ## has shipped that aliasing bug five times — a scoped leaderboard and its template
 ## ending up one object, a zone payload shared between two zones — and it is always the
 ## same fix.
 
-var def: DotEffectDef = null
+var def: GSEffectDef = null
 
 ## Who applied it. Zero means nobody in particular: a map hazard, a round rule.
 var source: int = 0
@@ -21,7 +21,7 @@ var expires_at: int = -1
 ## The next tick a periodic effect applies on.
 var next_periodic: int = 0
 
-## How many are folded into this one under [constant DotEffectDef.Stacking.STACK].
+## How many are folded into this one under [constant GSEffectDef.Stacking.STACK].
 var stacks: int = 1
 
 ## The tick it was applied on, for a HUD that wants to draw elapsed rather than left.
@@ -29,9 +29,9 @@ var applied_at: int = 0
 
 
 static func make(
-	p_def: DotEffectDef, tick: int, p_source: int = 0
-) -> DotEffectInstance:
-	var inst := DotEffectInstance.new()
+	p_def: GSEffectDef, tick: int, p_source: int = 0
+) -> GSEffectInstance:
+	var inst := GSEffectInstance.new()
 	inst.def = p_def
 	inst.source = p_source
 	inst.applied_at = tick
@@ -105,4 +105,4 @@ func to_wire() -> Dictionary:
 
 
 func _to_string() -> String:
-	return "DotEffectInstance(%s x%d until %d)" % [id(), stacks, expires_at]
+	return "GSEffectInstance(%s x%d until %d)" % [id(), stacks, expires_at]

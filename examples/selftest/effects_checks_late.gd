@@ -9,8 +9,8 @@ var _failed := 0
 var _section_count := 0
 
 
-func _manager(downed: bool = false) -> DotEffectManager:
-	var m := DotEffectManager.new()
+func _manager(downed: bool = false) -> GSEffectManager:
+	var m := GSEffectManager.new()
 	m.rules.downed_enabled = downed
 	add_child(m)
 	return m
@@ -100,7 +100,7 @@ func _test_revive() -> void:
 	places[2] = Vector3(100, 0, 0)
 	m.advance(m.rules.downed_revive_ticks / 2)
 	_check(
-		m.downed_state(1).state == DotDowned.State.DOWN,
+		m.downed_state(1).state == GSDowned.State.DOWN,
 		"a reviver who walks away stops reviving, checked every tick rather than trusted"
 	)
 	_check(
@@ -129,7 +129,7 @@ func _test_revive() -> void:
 	var _d2 := m.report_zero_health(2)
 	m.advance(t2 + 1)
 	_check(
-		m.downed_state(4).state == DotDowned.State.DOWN,
+		m.downed_state(4).state == GSDowned.State.DOWN,
 		"a reviver who goes down stops reviving"
 	)
 	_check(
@@ -178,10 +178,10 @@ func _check_shared_revive() -> void:
 	spots[2] = Vector3(100, 0, 0)
 	shared.advance(half + 3)
 	var left := shared.downed_state(1)
-	_check(left.state == DotDowned.State.REVIVING and left.reviver == 3 and left.revivers == 1,
+	_check(left.state == GSDowned.State.REVIVING and left.reviver == 3 and left.revivers == 1,
 		"when the reviver walks off, the one still holding carries on alone")
 	shared.leave_revive(1, 3)
-	_check(shared.downed_state(1).state == DotDowned.State.DOWN,
+	_check(shared.downed_state(1).state == GSDowned.State.DOWN,
 		"and when the last one lets go the revive stops")
 	shared.queue_free()
 
@@ -228,20 +228,20 @@ func _test_wire_and_mirror() -> void:
 	_section("the wire and the mirror")
 
 	var m := _manager(true)
-	var burn := DotEffectDef.burning(&"burn", 3.0, 10 * RATE)
+	var burn := GSEffectDef.burning(&"burn", 3.0, 10 * RATE)
 	var _d := m.define(burn)
-	var _d2 := m.define(DotEffectDef.invulnerability(&"uber", 8 * RATE))
+	var _d2 := m.define(GSEffectDef.invulnerability(&"uber", 8 * RATE))
 
 	m.advance(500)
 	var _a := m.apply(&"burn", 7, 3)
 	var _u := m.apply(&"uber", 7)
 
-	var mirror := DotEffectManager.new()
+	var mirror := GSEffectManager.new()
 	mirror.authoritative = false
 	mirror.rules.downed_enabled = true
 	add_child(mirror)
 	var _md := mirror.define(burn)
-	var _md2 := mirror.define(DotEffectDef.invulnerability(&"uber", 8 * RATE))
+	var _md2 := mirror.define(GSEffectDef.invulnerability(&"uber", 8 * RATE))
 
 	mirror.apply_wire(m.to_wire(7))
 	_check(mirror.has(7, &"burn"), "the wire carries an effect across")
@@ -281,22 +281,22 @@ func _test_wire_and_mirror() -> void:
 
 func _test_stack_scale() -> void:
 	_section("stack scale")
-	_check(is_equal_approx(DotStackScale.ramp(2.0, 0.5, 5.0, 0), 2.0), "no stacks: the base")
-	_check(is_equal_approx(DotStackScale.ramp(2.0, 0.5, 5.0, 3), 3.5), "three stacks: base plus three steps")
-	_check(is_equal_approx(DotStackScale.ramp(2.0, 0.5, 5.0, 99), 5.0), "any number of stacks stops at the cap")
-	_check(is_equal_approx(DotStackScale.ramp(2.0, 0.5, 5.0, -4), 2.0), "negative stacks count as none")
-	_check(is_equal_approx(DotStackScale.fade_alpha(0, 0.1, 0.3), 1.0), "no stacks: solid")
-	_check(is_equal_approx(DotStackScale.fade_alpha(3, 0.1, 0.3), 0.7), "three stacks: 1 - 3 * step")
-	_check(is_equal_approx(DotStackScale.fade_alpha(40, 0.1, 0.3), 0.3), "stops at the minimum alpha")
-	_check(DotStackScale.fade_alpha(99, 0.5, 0.0) >= DotStackScale.ALPHA_FLOOR, "a minimum of 0 still leaves it visible")
-	_check(is_equal_approx(DotStackScale.fade_alpha(5, -1.0, 0.3), 1.0), "a negative step never darkens the other way")
+	_check(is_equal_approx(GSStackScale.ramp(2.0, 0.5, 5.0, 0), 2.0), "no stacks: the base")
+	_check(is_equal_approx(GSStackScale.ramp(2.0, 0.5, 5.0, 3), 3.5), "three stacks: base plus three steps")
+	_check(is_equal_approx(GSStackScale.ramp(2.0, 0.5, 5.0, 99), 5.0), "any number of stacks stops at the cap")
+	_check(is_equal_approx(GSStackScale.ramp(2.0, 0.5, 5.0, -4), 2.0), "negative stacks count as none")
+	_check(is_equal_approx(GSStackScale.fade_alpha(0, 0.1, 0.3), 1.0), "no stacks: solid")
+	_check(is_equal_approx(GSStackScale.fade_alpha(3, 0.1, 0.3), 0.7), "three stacks: 1 - 3 * step")
+	_check(is_equal_approx(GSStackScale.fade_alpha(40, 0.1, 0.3), 0.3), "stops at the minimum alpha")
+	_check(GSStackScale.fade_alpha(99, 0.5, 0.0) >= GSStackScale.ALPHA_FLOOR, "a minimum of 0 still leaves it visible")
+	_check(is_equal_approx(GSStackScale.fade_alpha(5, -1.0, 0.3), 1.0), "a negative step never darkens the other way")
 
 
 # Hazard pool
 
 func _test_hazard_pool() -> void:
 	_section("hazard pool: damage only inside, ramp, cap, lifetime, trail, slow")
-	var profile := DotHazardProfile.new()
+	var profile := GSHazardProfile.new()
 	profile.kind = &"goo"
 	profile.radius = 2.0
 	profile.seconds = 4.0
@@ -315,7 +315,7 @@ func _test_hazard_pool() -> void:
 
 	var victims := {1: Vector3(0.5, 0, 0), 2: Vector3(9, 0, 0)}
 	var paid := {}
-	var pool := DotHazardPool.new()
+	var pool := GSHazardPool.new()
 	pool.occupants = func(at: Vector3, radius: float, _reach: float) -> Array:
 		var out := []
 		for v: int in victims:
@@ -362,15 +362,15 @@ func _test_hazard_pool() -> void:
 	var tr := pool.add(profile, Vector3.ZERO, 0.0, 9, -1.0, profile.trail_radius, profile.trail_seconds)
 	_check(is_equal_approx(float((pool.areas[tr] as Dictionary)["radius"]), 1.0), "trail puddles use trail radius")
 
-	var ramp := DotHazardProfile.new()
+	var ramp := GSHazardProfile.new()
 	ramp.grow_seconds = 1.0
-	var rp := DotHazardPool.new()
+	var rp := GSHazardPool.new()
 	var rid := rp.add(ramp, Vector3.ZERO, 0.0, 0, 3.0)
 	_check(is_equal_approx(rp.radius_at(rid, 0.0), ramp.radius * ramp.start_fraction) and is_equal_approx(rp.radius_at(rid, 5.0), ramp.radius), "a puddle spreads from 20% to full over its first second")
-	var got := DotHazardProfile.from_values({"radius": 99999, "dps": 5, "kind": "oil", "bogus": 1})
+	var got := GSHazardProfile.from_values({"radius": 99999, "dps": 5, "kind": "oil", "bogus": 1})
 	_check(got.radius == 50.0 and got.dps == 5.0 and got.kind == &"oil", "from_values clamps and ignores unknown keys")
-	var screen := DotEffectDef.screen_impair(&"goo_blind", 320, 3)
-	_check(screen.stacking == DotEffectDef.Stacking.STACK and screen.max_stacks == 3 and "screen_impair" in screen.tags, "screen_impair is a stacking tagged status")
+	var screen := GSEffectDef.screen_impair(&"goo_blind", 320, 3)
+	_check(screen.stacking == GSEffectDef.Stacking.STACK and screen.max_stacks == 3 and "screen_impair" in screen.tags, "screen_impair is a stacking tagged status")
 
 
 # Harness

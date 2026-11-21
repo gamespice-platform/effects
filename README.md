@@ -16,19 +16,19 @@ It has two related systems: temporary health that decays (overheal, pills), and 
 ## Quick start
 
 ```gdscript
-var effects := DotEffectManager.new()
+var effects := GSEffectManager.new()
 effects.setup()
 add_child(effects)
 
-effects.define(DotEffectDef.burning(&"afterburn", 3.0, 10 * 64))  # 3 damage every 32 ticks, for 10 seconds
-effects.define(DotEffectDef.damage_buff(&"crit", 3.0, 5 * 64))
-effects.define(DotEffectDef.invulnerability(&"invuln", 8 * 64))
-effects.define(DotEffectDef.speed(&"adrenaline", 1.4, 15 * 64))
+effects.define(GSEffectDef.burning(&"afterburn", 3.0, 10 * 64))  # 3 damage every 32 ticks, for 10 seconds
+effects.define(GSEffectDef.damage_buff(&"crit", 3.0, 5 * 64))
+effects.define(GSEffectDef.invulnerability(&"invuln", 8 * 64))
+effects.define(GSEffectDef.speed(&"adrenaline", 1.4, 15 * 64))
 
 effects.damaged.connect(func(entity, amount, type, source):
-    health_of(entity).apply(DotDamage.make(amount, type, source, tick)))
+    health_of(entity).apply(GSDamage.make(amount, type, source, tick)))
 
-effects.apply(&"afterburn", victim_id, attacker_id)   # a DotResult; refused if the victim is immune
+effects.apply(&"afterburn", victim_id, attacker_id)   # a GSResult; refused if the victim is immune
 effects.advance(tick)                                 # once per server tick
 ```
 
@@ -44,7 +44,7 @@ There are also `may_move`, `may_jump`, `may_capture`, `jump_scale`, `fire_rate_s
 
 ## What an effect can do
 
-The four factories above cover the common cases. Everything else is a field on `DotEffectDef`. The numbers are defaults.
+The four factories above cover the common cases. Everything else is a field on `GSEffectDef`. The numbers are defaults.
 
 | Field | Default | What it does |
 | --- | --- | --- |
@@ -79,10 +79,10 @@ By default a downed player bleeds out over about 90 seconds. A teammate who hold
 
 ## Settings
 
-The rules live in a `DotEffectRules` resource on the manager's `rules`. The manager makes a default one if you set none. Values layer in the usual order: inspector defaults, a JSON file, the environment, then the command line. Call `load_layered()` before `setup()`:
+The rules live in a `GSEffectRules` resource on the manager's `rules`. The manager makes a default one if you set none. Values layer in the usual order: inspector defaults, a JSON file, the environment, then the command line. Call `load_layered()` before `setup()`:
 
 ```gdscript
-var rules := DotEffectRules.new()
+var rules := GSEffectRules.new()
 rules.load_layered("user://effects.json")
 effects.rules = rules
 ```

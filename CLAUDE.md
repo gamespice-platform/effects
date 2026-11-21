@@ -17,15 +17,15 @@ Read the family [CLAUDE.md](../../CLAUDE.md) first.
 
 | Path | What |
 | --- | --- |
-| `core/dot_effect_def.gd` | `DotEffectDef`: the document (duration, periodic amount, scales, flags, `tags`, `cures`, `immune_to`) and stock constructors (`screen_impair`: a stacking status a screen overlay reads) |
-| `core/dot_effect_instance.gd` | `DotEffectInstance`: one application to one entity |
-| `core/dot_effect_state.gd` | `DotEffectState`: everything on one entity and its aggregate (`recompute`) |
-| `core/dot_effect_rules.gd` | `DotEffectRules`: limits, temporary health, the downed/revive half; layered `DotConfig` |
-| `core/dot_downed.gd` | `DotDowned`: one entity, down rather than dead |
-| `core/dot_stack_scale.gd` | `DotStackScale`: `ramp` (base plus a step per stack, capped) and `fade_alpha` (solid down to a visible floor); pure arithmetic a game feeds its own cvars |
-| `core/dot_hazard_profile.gd` | `DotHazardProfile`: one ground hazard as a document (radius, lifetime, dps and ramp, tick interval, slow, fade, colour, per-owner and global caps, trail spacing); `KEYS` lists the clampable values a game publishes as cvars or dot-profile keys, `from_values` reads them |
-| `runtime/dot_hazard_pool.gd` | `DotHazardPool`: puddles of acid, goo or oil. Damage leaves through `damage_sink`, who is inside comes from `occupants`; caps evict the oldest; `trail()` drops puddles behind a moving owner; clients draw from `added`/`ended`. Zombie Zone's acid runs on it |
-| `runtime/dot_effect_manager.gd` | `DotEffectManager`: the one node a game holds; queries, `damaged`, `on_death`, `report_zero_health`, wire form |
+| `core/dot_effect_def.gd` | `GSEffectDef`: the document (duration, periodic amount, scales, flags, `tags`, `cures`, `immune_to`) and stock constructors (`screen_impair`: a stacking status a screen overlay reads) |
+| `core/dot_effect_instance.gd` | `GSEffectInstance`: one application to one entity |
+| `core/dot_effect_state.gd` | `GSEffectState`: everything on one entity and its aggregate (`recompute`) |
+| `core/dot_effect_rules.gd` | `GSEffectRules`: limits, temporary health, the downed/revive half; layered `GSConfig` |
+| `core/dot_downed.gd` | `GSDowned`: one entity, down rather than dead |
+| `core/dot_stack_scale.gd` | `GSStackScale`: `ramp` (base plus a step per stack, capped) and `fade_alpha` (solid down to a visible floor); pure arithmetic a game feeds its own cvars |
+| `core/dot_hazard_profile.gd` | `GSHazardProfile`: one ground hazard as a document (radius, lifetime, dps and ramp, tick interval, slow, fade, colour, per-owner and global caps, trail spacing); `KEYS` lists the clampable values a game publishes as cvars or dot-profile keys, `from_values` reads them |
+| `runtime/dot_hazard_pool.gd` | `GSHazardPool`: puddles of acid, goo or oil. Damage leaves through `damage_sink`, who is inside comes from `occupants`; caps evict the oldest; `trail()` drops puddles behind a moving owner; clients draw from `added`/`ended`. Zombie Zone's acid runs on it |
+| `runtime/dot_effect_manager.gd` | `GSEffectManager`: the one node a game holds; queries, `damaged`, `on_death`, `report_zero_health`, wire form |
 | `examples/effects_selftest.tscn` | the suite |
 
 Paths except `examples/` are in `addons/dot_effects/`.
@@ -37,14 +37,14 @@ The family's two steps ([family CLAUDE.md](../../CLAUDE.md#validating-anything))
 ## Rules that bite
 
 - Never touch a health value or name a GameSpice Combat class; damage leaves as `damaged(entity, amount, type: StringName, source)`. [design](docs/design.md#it-never-touches-a-health-value)
-- A new effect is a `DotEffectDef`, never a class. [design](docs/design.md#why-this-exists)
+- A new effect is a `GSEffectDef`, never a class. [design](docs/design.md#why-this-exists)
 - The aggregate is recomputed on apply, remove and expiry; never cache it against a deadline. [design](docs/design.md#the-aggregate-is-recomputed-on-change-never-cached-against-a-deadline)
 - Scales multiply, stacks included; never add them. [design](docs/design.md#modifiers-multiply-and-stacks-multiply-too)
 - Invulnerability is a flag, not a zero multiplier; `no_capture` and `no_attack` stay separate. [design](docs/design.md#invulnerability-is-a-flag-not-a-zero-multiplier)
 - `cures` and `immune_to` name tags, never ids; curing runs before the per-entity cap. [design](docs/design.md#interaction-is-by-tag-never-by-id)
 - A cancelled revive loses its progress; a revive re-tests its preconditions every tick; downed state is created on demand by every accessor. [design](docs/design.md#downed-and-revived)
 - `authoritative = false` refuses `apply()` and makes `advance()` a no-op; the wire form is per entity. [design](docs/design.md#a-mirror-does-not-simulate)
-- Every aggregate on `DotEffectState` gets a forwarding method on `DotEffectManager`, and the suite asks through the manager. [design](docs/design.md#every-aggregate-has-a-facade-on-the-manager)
+- Every aggregate on `GSEffectState` gets a forwarding method on `GSEffectManager`, and the suite asks through the manager. [design](docs/design.md#every-aggregate-has-a-facade-on-the-manager)
 
 ## Open
 
