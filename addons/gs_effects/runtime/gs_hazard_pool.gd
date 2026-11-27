@@ -23,9 +23,14 @@ var id_source: Callable = Callable()
 ## id -> {kind, at, radius, until, since, amount, owner, profile, grow, paid}
 var areas: Dictionary = {}
 
+const _NO_PAID: Dictionary = {}
+
 var _next_id: int = 1
 var _stood: Dictionary = {}
 var _slow: Dictionary = {}
+# Swapped with _stood/_slow each tick so tick() allocates nothing.
+var _stood_next: Dictionary = {}
+var _slow_next: Dictionary = {}
 var _trails: Dictionary = {}
 
 
@@ -34,7 +39,7 @@ var _trails: Dictionary = {}
 func add(profile: GSHazardProfile, at: Vector3, now: float, owner: int = 0, amount: float = -1.0,
 		radius: float = -1.0, seconds: float = -1.0) -> int:
 	_enforce_caps(profile, owner)
-	var id := id_source.call() as int if id_source.is_valid() else _take_id()
+	var id := id_source.call() as int if id_source.is_valid() else _take_id()  # perf-lint: allow dynamic_call game-supplied hook
 	var r := radius if radius > 0.0 else profile.radius
 	var s := seconds if seconds > 0.0 else profile.seconds
 	areas[id] = {"kind": profile.kind, "at": at, "radius": r, "until": now + s, "since": now,
@@ -87,15 +92,17 @@ func slow_of(key: Variant) -> float:
 
 
 func tick(now: float, delta: float) -> void:
-	var stood_now := {}
-	var slow_now := {}
+	var stood_now := _stood_next
+	var slow_now := _slow_next
+	stood_now.clear()
+	slow_now.clear()
 
 	for id: int in areas.keys():
 		var a: Dictionary = areas[id]
 
 		if float(a["until"]) <= now:
 			areas.erase(id)
-			ended.emit(id)
+			ended.emit(id)  # perf-lint: allow emit_in_loop one event per expired puddle
 			continue
 
 		if not occupants.is_valid():
@@ -104,7 +111,7 @@ func tick(now: float, delta: float) -> void:
 		var p: GSHazardProfile = a["profile"]
 		var at: Vector3 = a["at"]
 		var full: float = float(a["amount"]) * p.amount_mult
-		var inside: Array = occupants.call(at, radius_at(id, now), p.reach)
+		var inside: Array = occupants.call(at, radius_at(id, now), p.reach)  # perf-lint: allow dynamic_call game-supplied hook
 
 		for victim: Variant in inside:
 			var key: Variant = _key(victim)
@@ -114,6 +121,8 @@ func tick(now: float, delta: float) -> void:
 			var rate := lerpf(p.dps_start, full, clampf(stood / p.ramp_seconds, 0.0, 1.0)) if p.ramp_seconds > 0.0 else full
 			_pay(a, victim, rate, delta, p)
 
+	_stood_next = _stood
+	_slow_next = _slow
 	_stood = stood_now
 	_slow = slow_now
 
@@ -121,14 +130,17 @@ func tick(now: float, delta: float) -> void:
 ## Drops a puddle behind a moving [param owner] at [param pos] when it has gone [member GSHazardProfile.trail_spacing]
 ## since the last one and [member GSHazardProfile.trail_interval] has passed. Returns the id, or 0 when none dropped.
 func trail(profile: GSHazardProfile, owner: int, pos: Vector3, now: float) -> int:
-	var t: Dictionary = _trails.get(owner, {})
+	var t: Variant = _trails.get(owner)
 
-	if not t.is_empty():
-		var moved: float = (t["pos"] as Vector3).distance_to(pos)
-		if moved < profile.trail_spacing or now - float(t["time"]) < profile.trail_interval:
+	if t == null:
+		_trails[owner] = {"pos": pos, "time": now}  # perf-lint: allow alloc once per trail owner
+	else:
+		var td: Dictionary = t
+		var moved: float = (td["pos"] as Vector3).distance_to(pos)
+		if moved < profile.trail_spacing or now - float(td["time"]) < profile.trail_interval:
 			return 0
-
-	_trails[owner] = {"pos": pos, "time": now}
+		td["pos"] = pos
+		td["time"] = now
 	return add(profile, pos, now, owner, -1.0, profile.trail_radius, profile.trail_seconds)
 
 
@@ -156,19 +168,21 @@ func _pay(a: Dictionary, victim: Variant, rate: float, delta: float, p: GSHazard
 		return
 
 	# Payments are per puddle and victim in effect: the clock is the puddle's.
-	var key := "%s" % [_key(victim)]
-	var paid: Dictionary = a.get("paid_by", {})
+	var key: Variant = _key(victim)
+	var paid: Dictionary = a.get("paid_by", _NO_PAID)
+	if paid.is_read_only():
+		paid = {}  # perf-lint: allow alloc once per puddle, on its first payment
+		a["paid_by"] = paid
 	var owed: float = float(paid.get(key, 0.0)) + delta
 	if owed >= p.tick_interval:
 		_deliver(victim, rate * owed, int(a["owner"]), p.kind)
 		owed = 0.0
 	paid[key] = owed
-	a["paid_by"] = paid
 
 
 func _deliver(victim: Variant, amount: float, owner: int, kind: StringName) -> void:
 	if damage_sink.is_valid():
-		damage_sink.call(victim, amount, owner, kind)
+		damage_sink.call(victim, amount, owner, kind)  # perf-lint: allow dynamic_call game-supplied hook
 	damaged.emit(victim, amount, owner, kind)
 
 
@@ -192,7 +206,7 @@ func _oldest(kind: StringName, owner: int) -> int:
 
 
 func _key(victim: Variant) -> Variant:
-	return victim_key.call(victim) if victim_key.is_valid() else victim
+	return victim_key.call(victim) if victim_key.is_valid() else victim  # perf-lint: allow dynamic_call game-supplied hook
 
 
 func _take_id() -> int:

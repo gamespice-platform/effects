@@ -266,7 +266,7 @@ func _remove_tagged(state: GSEffectState, tag: String, reason: StringName) -> in
 		var id := inst.id()
 		state.instances.remove_at(i)
 		taken += 1
-		removed.emit(state.entity, id, reason)
+		removed.emit(state.entity, id, reason)  # perf-lint: allow emit_in_loop one event per removed effect
 	if taken > 0:
 		state.recompute()
 	return taken
@@ -539,17 +539,26 @@ func stand_up(entity: int, reset_incaps: bool = false) -> void:
 
 
 func _within_revive_range(by: int, entity: int) -> GSResult:
-	if rules.downed_revive_radius <= 0.0 or not position_fn.is_valid():
+	if _in_revive_range(by, entity):
 		return GSResult.success(null)
-	var a: Vector3 = position_fn.call(by)
-	var b: Vector3 = position_fn.call(entity)
-	var d := a.distance_to(b)
-	if d > rules.downed_revive_radius:
-		return GSResult.fail(
-			GSError.CODE_STATE,
-			"Too far to revive (%.1f > %.1f)." % [d, rules.downed_revive_radius]
-		)
-	return GSResult.success(null)
+	var d := _revive_distance(by, entity)
+	return GSResult.fail(
+		GSError.CODE_STATE,
+		"Too far to revive (%.1f > %.1f)." % [d, rules.downed_revive_radius]  # perf-lint: allow string_build failure message only
+	)
+
+
+## Per-tick form of [method _within_revive_range]: no result object, no message.
+func _in_revive_range(by: int, entity: int) -> bool:
+	if rules.downed_revive_radius <= 0.0 or not position_fn.is_valid():
+		return true
+	return _revive_distance(by, entity) <= rules.downed_revive_radius
+
+
+func _revive_distance(by: int, entity: int) -> float:
+	var a: Vector3 = position_fn.call(by)  # perf-lint: allow dynamic_call game-supplied position hook
+	var b: Vector3 = position_fn.call(entity)  # perf-lint: allow dynamic_call game-supplied position hook
+	return a.distance_to(b)
 
 
 # --- Temporary health --------------------------------------------------------
@@ -602,7 +611,7 @@ func _advance_effects(tick: int) -> void:
 				var id := inst.id()
 				state.instances.remove_at(i)
 				dirty = true
-				removed.emit(int(entity), id, &"expired")
+				removed.emit(int(entity), id, &"expired")  # perf-lint: allow emit_in_loop one event per expired effect or pulse
 				continue
 
 			var def := inst.def
@@ -614,11 +623,11 @@ func _advance_effects(tick: int) -> void:
 
 			var n := float(maxi(inst.stacks, 1))
 			if def.damage_per_tick > 0.0:
-				damaged.emit(
+				damaged.emit(  # perf-lint: allow emit_in_loop one event per expired effect or pulse
 					int(entity), def.damage_per_tick * n, def.damage_type, inst.source
 				)
 			if def.heal_per_tick > 0.0:
-				healed.emit(
+				healed.emit(  # perf-lint: allow emit_in_loop one event per expired effect or pulse
 					int(entity), def.heal_per_tick * n, def.heal_overheals, inst.source
 				)
 
@@ -639,17 +648,22 @@ func _advance_downed(tick: int) -> void:
 			# Re-tested every tick rather than trusted: a reviver who died, walked away
 			# or went down themselves must stop reviving, and a game that only calls
 			# cancel_revive() from its death handler has one path to get wrong.
-			for helper: int in d.helpers.duplicate():
-				if not _within_revive_range(helper, int(entity)).ok or is_down(helper):
+			# Walked backwards so leave_revive() erasing the current helper is safe
+			# without a per-tick copy of the list.
+			var hi := d.helpers.size() - 1
+			while hi >= 0:
+				var helper := d.helpers[hi]
+				if not _in_revive_range(helper, int(entity)) or is_down(helper):
 					leave_revive(int(entity), helper)
-			var still := _within_revive_range(d.reviver, int(entity))
+				hi = mini(hi - 1, d.helpers.size() - 1)
+			var still := _in_revive_range(d.reviver, int(entity))
 			var reviver_down := is_down(d.reviver)
-			if (not still.ok or reviver_down) and not d.helpers.is_empty():
+			if (not still or reviver_down) and not d.helpers.is_empty():
 				# The reviver went, somebody else is still holding: they carry on.
 				leave_revive(int(entity), d.reviver)
-				still = GSResult.success(null)
+				still = true
 				reviver_down = false
-			if not still.ok or reviver_down:
+			if not still or reviver_down:
 				cancel_revive(int(entity), &"interrupted" if reviver_down else &"moved")
 			else:
 				var rate := float(d.revivers) if rules.downed_revive_scales else 1.0
@@ -660,7 +674,7 @@ func _advance_downed(tick: int) -> void:
 					d.progress = 0.0
 					d.clear_revivers()
 					d.health = 0.0
-					revived.emit(int(entity), by, rules.downed_revive_health)
+					revived.emit(int(entity), by, rules.downed_revive_health)  # perf-lint: allow emit_in_loop one event per finished revive
 					continue
 
 		# Intended: the pool drains while a revive is under way too (this line is reached
@@ -689,7 +703,7 @@ func _advance_temp(tick: int) -> void:
 			continue
 		var take := minf(rules.temp_decay_per_tick, have)
 		_temp[entity] = have - take
-		temp_decayed.emit(int(entity), take)
+		temp_decayed.emit(int(entity), take)  # perf-lint: allow emit_in_loop one event per expired effect or pulse
 
 
 # --- Round and death ----------------------------------------------------------
