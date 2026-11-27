@@ -2,6 +2,8 @@
 
 Status effects, temporary health and going down instead of dying, for Godot 4.7+. Burning, crits, invulnerability, slows, stuns and marks are one data document with different numbers, so a new effect is data and not a new class. Part of the [GameSpice](https://github.com/gamespice-platform) family. It needs only [GameSpice Core](https://github.com/gamespice-platform/core).
 
+GameSpice Effects is a GameSpice addon under the MIT licence, built with Claude Code and tested headless with `res://examples/effects_selftest.tscn`. The games in [Zee's Games](https://zeesgames.com) are built on the GameSpice addons and run on live servers, so status effects run in real matches.
+
 The addon never changes a health value. A burning entity makes the manager emit `damaged` with an amount, and your game applies it the way it applies any damage, so a burn tick goes through the same armour and friendly-fire rules as a bullet. A slowed entity makes `move_speed_scale()` return less than 1, and your movement code reads it. Effects therefore work in a game with no damage system at all.
 
 It has two related systems: temporary health that decays (overheal, pills), and being downed at zero health so a teammate can pick you up.
@@ -120,9 +122,16 @@ godot --headless --path . res://examples/effects_selftest.tscn
 
 The self-test is offline and exits non-zero on any failure.
 
-## Status
+## Used by
 
-Built and maintained with Claude Code. The test suites pass, but little of this has been in front of real players yet. Please report rough edges by opening an issue.
+These games vendor it:
+
+- [Fatal Contact](https://zeesgames.com/fatal-contact) - status effects on players
+- [Airdrift](https://zeesgames.com/airdrift)
+- [Playlot](https://zeesgames.com/playlot)
+- [Zombie Zone](https://zeesgames.com/zombie-zone)
+
+The whole collection is at [zeesgames.com](https://zeesgames.com).
 
 ## Licence
 
